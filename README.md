@@ -41,6 +41,22 @@ git clone https://github.com/sdyckjq-lab/llm-wiki-skill.git ~/.claude/skills/llm
 
 > 依赖安装是可选的。不装也能用，只是无法自动提取 URL（可以手动粘贴文本）。
 
+## 前置条件
+
+开始前请先确认你已经有这些环境：
+
+- `Claude Code`：这个 skill 是给 Claude Code 用的
+- `git`：用于克隆仓库
+- `Google Chrome`：网页和公众号提取依赖 Chrome 调试模式
+- `bun` 或 `npm`：安装 `baoyu-url-to-markdown` 的 Node 依赖
+- `uv`：`youtube-transcript` 提取字幕时需要
+
+Chrome 需要用调试模式启动：
+
+```bash
+open -na "Google Chrome" --args --remote-debugging-port=9222
+```
+
 ## 使用
 
 在 Claude Code 中直接说：
@@ -66,6 +82,34 @@ git clone https://github.com/sdyckjq-lab/llm-wiki-skill.git ~/.claude/skills/llm
 ```
 知识库里关于 Transformer 的内容有哪些？
 ```
+
+## 常见问题
+
+### 看到 `declare: -A: invalid option` 怎么办？
+
+这是旧版本 `setup.sh` 在 macOS 默认 bash 上的兼容性问题。先更新到最新版本，再重新运行：
+
+```bash
+cd ~/.claude/skills/llm-wiki && git pull && bash setup.sh
+```
+
+### Chrome 调试模式怎么开？
+
+网页、公众号和部分 URL 提取依赖 Chrome 的 9222 调试端口。先关闭已经打开的普通 Chrome 窗口，再执行：
+
+```bash
+open -na "Google Chrome" --args --remote-debugging-port=9222
+```
+
+如果你想确认端口已经开好，可以运行：
+
+```bash
+lsof -i :9222 -sTCP:LISTEN
+```
+
+### 为什么 X / Twitter 提取还是失败？
+
+`x-article-extractor` 还依赖额外的 `baoyu-danger-x-to-markdown`。这个依赖没有打包在本仓库里，需要你自己额外安装；如果暂时不装，也可以直接把 X 内容复制粘贴给 Claude 处理。
 
 ## 目录结构
 

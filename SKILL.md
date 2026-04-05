@@ -458,7 +458,9 @@ bash ${SKILL_DIR}/setup.sh
    - 先检查当前工作目录是否包含 `.wiki-schema.md` → 用当前目录
    - 不包含 → 回退到读取 `~/.llm-wiki-path`
    - 两个都没有 → 先运行 init 工作流
-   - 读取 `.wiki-schema.md` 的"语言"字段，确定 `WIKI_LANG`（同 ingest 工作流逻辑），列出所有可处理文件：
+   - 读取 `.wiki-schema.md` 的"语言"字段，确定 `WIKI_LANG`（同 ingest 工作流逻辑）
+
+2. **列出所有可处理文件**：
    - 支持的格式：`.md`, `.txt`, `.pdf`, `.html`
    - 忽略：隐藏文件、`.git` 目录、`node_modules` 等
 

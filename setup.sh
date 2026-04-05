@@ -26,24 +26,23 @@ if [ ! -d "$DEPS_DIR" ]; then
     exit 1
 fi
 
-# 定义依赖：目录名 → 说明
-declare -A DEPS
-DEPS=(
-    ["baoyu-url-to-markdown"]="网页和公众号文章提取"
-    ["x-article-extractor"]="X (Twitter) 内容提取"
-    ["youtube-transcript"]="YouTube 字幕提取"
-)
+# 定义依赖：目录名 + 说明（兼容 macOS 默认 bash 3.2）
+SKILL_NAMES=("baoyu-url-to-markdown" "x-article-extractor" "youtube-transcript")
+SKILL_DESCS=("网页和公众号文章提取" "X (Twitter) 内容提取" "YouTube 字幕提取")
 
 INSTALLED=0
 SKIPPED=0
 MISSING_SOURCE=()
 
-for skill_name in "${!DEPS[@]}"; do
+for i in "${!SKILL_NAMES[@]}"; do
+    skill_name="${SKILL_NAMES[$i]}"
+    skill_desc="${SKILL_DESCS[$i]}"
+
     if [ -d "$SKILLS_DIR/$skill_name" ]; then
-        ok "$skill_name 已安装（${DEPS[$skill_name]}）"
+        ok "$skill_name 已安装（$skill_desc）"
         SKIPPED=$((SKIPPED + 1))
     elif [ -d "$DEPS_DIR/$skill_name" ]; then
-        info "安装 $skill_name（${DEPS[$skill_name]}）..."
+        info "安装 $skill_name（$skill_desc）..."
         cp -r "$DEPS_DIR/$skill_name" "$SKILLS_DIR/$skill_name"
         ok "$skill_name 安装完成"
         INSTALLED=$((INSTALLED + 1))
@@ -95,12 +94,20 @@ echo "  环境检查"
 echo "================================"
 echo ""
 
-# Chrome 检查（仅提示，不阻塞）
-if pgrep -x "Google Chrome" > /dev/null 2>&1; then
-    ok "Chrome 正在运行"
+# uv 检查（仅提示，不阻塞）
+if command -v uv > /dev/null 2>&1; then
+    ok "uv 已安装（youtube-transcript 可用）"
 else
-    info "Chrome 当前未运行。baoyu-url-to-markdown 会在需要时尝试自动启动 Chrome"
-    echo "  如果提取失败，手动启动 Chrome 后重试即可"
+    warn "未找到 uv。youtube-transcript 需要 uv 才能提取 YouTube 字幕"
+    echo "  可用 Homebrew 安装：brew install uv"
+fi
+
+# Chrome 调试端口检查（仅提示，不阻塞）
+if lsof -i :9222 -sTCP:LISTEN > /dev/null 2>&1; then
+    ok "Chrome 调试端口 9222 已监听"
+else
+    warn "Chrome 调试端口 9222 未监听。baoyu-url-to-markdown 需要 Chrome 以调试模式启动"
+    echo "  请先执行：open -na \"Google Chrome\" --args --remote-debugging-port=9222"
 fi
 
 echo ""

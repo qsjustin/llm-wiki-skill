@@ -7,6 +7,7 @@ set -e
 
 WIKI_ROOT="${1:-$HOME/Documents/我的知识库}"
 TOPIC="${2:-我的知识库}"
+LANGUAGE="${3:-中文}"
 DATE=$(date +%Y-%m-%d)
 SKILL_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
@@ -14,16 +15,22 @@ SKILL_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 replace_vars() {
     local input_file="$1"
     local output_file="$2"
-    perl -pe "
-        s/\{\{TOPIC\}\}/\Q$TOPIC\E/g;
-        s/\{\{DATE\}\}/\Q$DATE\E/g;
-        s/\{\{WIKI_ROOT\}\}/\Q$WIKI_ROOT\E/g;
-    " "$input_file" > "$output_file"
+    TOPIC_VALUE="$TOPIC" \
+    DATE_VALUE="$DATE" \
+    WIKI_ROOT_VALUE="$WIKI_ROOT" \
+    LANGUAGE_VALUE="$LANGUAGE" \
+    perl -pe '
+        s/\{\{TOPIC\}\}/$ENV{TOPIC_VALUE}/g;
+        s/\{\{DATE\}\}/$ENV{DATE_VALUE}/g;
+        s/\{\{WIKI_ROOT\}\}/$ENV{WIKI_ROOT_VALUE}/g;
+        s/\{\{LANGUAGE\}\}/$ENV{LANGUAGE_VALUE}/g;
+    ' "$input_file" > "$output_file"
 }
 
 echo "正在创建知识库..."
 echo "   路径：$WIKI_ROOT"
 echo "   主题：$TOPIC"
+echo "   语言：$LANGUAGE"
 echo ""
 
 # 创建目录结构（包含小红书和知乎）
