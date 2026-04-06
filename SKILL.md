@@ -80,6 +80,43 @@ bash ${SKILL_DIR}/setup.sh
 
 ---
 
+## 通用前置检查
+
+除 `init` 外，其他工作流默认先执行这段检查：
+
+1. 先检查**当前工作目录**是否包含 `.wiki-schema.md`
+   - 如果包含 → 用当前目录作为知识库根路径
+   - 如果不包含 → 回退到读取 `~/.llm-wiki-path`
+2. 如果两者都没有：
+   - `ingest` / `batch-ingest` → 先运行 `init`
+   - `query` / `lint` / `status` / `digest` / `graph` → 提示用户先初始化知识库
+3. 读取知识库根目录下的 `.wiki-schema.md`
+4. 从 `.wiki-schema.md` 的"语言"字段判断 `WIKI_LANG`
+   - `语言：中文` → `WIKI_LANG=zh`
+   - `语言：English` → `WIKI_LANG=en`
+   - 字段缺失 → 默认 `WIKI_LANG=zh`
+
+## 输出语言规则
+
+所有面向用户的输出和新写入的 wiki 内容，都按 `WIKI_LANG` 生成：
+
+- `WIKI_LANG=zh` → 使用下文中文示例
+- `WIKI_LANG=en` → 保持与中文示例相同的结构、信息量和顺序，仅改为自然英文措辞
+- 文件路径、wiki 链接、目录名保持现有约定，不因为语言切换而改动
+
+**术语对照**：
+- 素材 → Source
+- 实体 → Entity
+- 主题 → Topic
+- 摘要 → Summary
+- 综合 → Synthesis
+- 消化 → Ingest
+- 对比 → Comparison
+- 深度报告 → Deep Dive Report
+- 知识图谱 → Knowledge Graph
+
+---
+
 ## 工作流 1：init（初始化知识库）
 
 ### 前置检查（含多知识库 CWD 检查）
@@ -115,123 +152,7 @@ bash ${SKILL_DIR}/setup.sh
    - 将 `.wiki-schema.md` 中的 `语言：{{LANGUAGE}}` 替换为：
      - `zh` → `语言：中文`（种子文件保持中文，无需额外处理）
      - `en` → `语言：English`，**同时**覆写以下种子文件为英文版：
-
-   **`index.md`（en）**：
-   ```markdown
-   # Wiki Index
-
-   > Last updated: {{DATE}}
-
-   ---
-
-   ## Overview
-
-   - Topic: {{TOPIC}}
-   - Total sources: 0
-   - Total wiki pages: 0
-
-   ---
-
-   ## Entity Pages
-
-   > People, organizations, concepts, tools
-
-   (none yet)
-
-   ---
-
-   ## Topic Pages
-
-   > Research topics, knowledge domains
-
-   (none yet)
-
-   ---
-
-   ## Source Summaries
-
-   > One summary page per ingested source
-
-   (none yet)
-
-   ---
-
-   ## Comparisons
-
-   > Side-by-side analysis of options, tools, viewpoints
-
-   (none yet)
-
-   ---
-
-   ## Synthesis
-
-   > Deep cross-source analysis
-
-   (none yet)
-   ```
-
-   **`wiki/overview.md`（en）**：
-   ```markdown
-   # {{TOPIC}} — Wiki Overview
-
-   > Created: {{DATE}}
-
-   ---
-
-   ## About this wiki
-
-   This wiki collects all knowledge and sources about **{{TOPIC}}**.
-
-   Each source is digested and organized by AI into interlinked wiki pages. Browse by:
-
-   - **Entity pages**: people, organizations, concepts, tools
-   - **Topic pages**: synthesis around a research theme
-   - **Source summaries**: key takeaways from each source
-   - **Comparisons**: side-by-side analysis of options or viewpoints
-   - **Synthesis**: deep cross-source insights
-
-   ---
-
-   ## Knowledge map
-
-   (Will show major coverage areas as sources accumulate)
-
-   ---
-
-   ## Quick navigation
-
-   | Type | Count | View |
-   |------|-------|------|
-   | Sources | 0 | [[Source Summaries]] |
-   | Entities | 0 | [[Entity Pages]] |
-   | Topics | 0 | [[Topic Pages]] |
-   | Comparisons | 0 | [[Comparisons]] |
-   | Synthesis | 0 | [[Synthesis]] |
-
-   ---
-
-   ## Recent updates
-
-   (none yet)
-   ```
-
-   **`log.md`（en）**：
-   ```markdown
-   # Operation Log
-
-   > Records all changes to this wiki
-
-   ---
-
-   ## {{DATE}} — Initialized
-
-   - **Action**: Created wiki
-   - **Topic**: {{TOPIC}}
-   - **Status**: Done
-   ```
-
-   将上述模板中的 `{{DATE}}` 和 `{{TOPIC}}` 替换为实际值后写入文件。
+   - 如果 `WIKI_LANG=en`，读取 `${SKILL_DIR}/templates/index-en-template.md`、`${SKILL_DIR}/templates/overview-en-template.md`、`${SKILL_DIR}/templates/log-en-template.md`，将 `{{DATE}}` 和 `{{TOPIC}}` 替换为实际值后，分别写入 `index.md`、`wiki/overview.md`、`log.md`
 
 6. **记录路径**到 `~/.llm-wiki-path`：
    ```bash
@@ -253,19 +174,7 @@ bash ${SKILL_DIR}/setup.sh
 
    推荐：用 Obsidian 打开这个文件夹，可以实时看到知识库的构建效果。
    ```
-
-   **English（en）**：
-   ```
-   Wiki created! Path: <path>
-
-   Next steps:
-   - Give me a URL and I'll extract and organize it (web articles, X/Twitter, etc.)
-   - Give me a local file path (PDF, Markdown, etc.)
-   - Paste text content directly
-   - Batch ingest: give me a folder path
-
-   Tip: Open this folder in Obsidian to see the wiki build in real time.
-   ```
+   （英文版按「输出语言规则」生成，结构相同。）
 
 ---
 
@@ -273,18 +182,9 @@ bash ${SKILL_DIR}/setup.sh
 
 这是最核心的工作流。用户给一个素材进来，AI 做所有的整理工作。
 
-### 前置检查（含多知识库 CWD 检查）
+### 前置检查
 
-1. 先检查**当前工作目录**是否包含 `.wiki-schema.md`
-   - 如果包含 → 用当前目录作为知识库根路径
-   - 如果不包含 → 回退到读取 `~/.llm-wiki-path`
-2. 两个都没有 → 先运行 init 工作流
-3. 读取知识库根目录下的 `.wiki-schema.md` 了解知识库配置
-4. **读取语言配置**：从 `.wiki-schema.md` 的"语言"字段判断 `WIKI_LANG`：
-   - `语言：中文` → `WIKI_LANG=zh`
-   - `语言：English` → `WIKI_LANG=en`
-   - 字段缺失 → 默认 `zh`
-   - 后续所有输出（摘要页内容、向用户展示的结果）均按此语言生成
+执行**通用前置检查**（见上方定义）。
 
 ### 素材提取路由
 
@@ -389,22 +289,7 @@ bash ${SKILL_DIR}/setup.sh
    发现关联：
    - 这篇素材和 [[已有素材]] 在 {某概念} 上有联系
    ```
-
-   **English（en）**：
-   ```
-   Ingested: {source title}
-
-   New pages:
-   - {source summary page}
-   - {new entity page 1}
-   - {new topic page 1}
-
-   Updated pages:
-   - {existing entity page 2} (appended new info)
-
-   Connections found:
-   - This source connects with [[existing source]] on {concept}
-   ```
+   （英文版按「输出语言规则」生成，结构相同。）
 
 ### 简化处理流程（短素材 <= 1000 字）
 
@@ -432,17 +317,7 @@ bash ${SKILL_DIR}/setup.sh
    待完善：
    - [待创建: [[概念名]]]（积累更多素材后整理）
    ```
-
-   **English（en）**：
-   ```
-   Ingested: {source title} (short content, simplified processing)
-
-   Added:
-   - Source summary page
-
-   To be expanded:
-   - [pending: [[concept name]]] (will organize after more sources)
-   ```
+   （英文版按「输出语言规则」生成，结构相同。）
 
 ---
 
@@ -452,11 +327,8 @@ bash ${SKILL_DIR}/setup.sh
 
 ### 步骤
 
-1. **确认知识库路径**（CWD 检查）：
-   - 先检查当前工作目录是否包含 `.wiki-schema.md` → 用当前目录
-   - 不包含 → 回退到读取 `~/.llm-wiki-path`
-   - 两个都没有 → 先运行 init 工作流
-   - 读取 `.wiki-schema.md` 的"语言"字段，确定 `WIKI_LANG`（同 ingest 工作流逻辑）
+1. **确认知识库路径**：
+   - 执行**通用前置检查**（见上方定义），获取知识库根路径和 `WIKI_LANG`
 
 2. **列出所有可处理文件**：
    - 支持的格式：`.md`, `.txt`, `.pdf`, `.html`
@@ -473,16 +345,7 @@ bash ${SKILL_DIR}/setup.sh
 
    预计需要 {N} 轮处理。是否开始？
    ```
-
-   **en**：
-   ```
-   Found {N} files to process:
-   1. file1.pdf
-   2. file2.md
-   3. file3.txt
-
-   Estimated {N} rounds. Start?
-   ```
+   （英文版按「输出语言规则」生成，结构相同。）
 
 4. **逐个处理**：对每个文件执行 ingest 工作流
    - 根据内容长度自动选择完整/简化处理
@@ -500,18 +363,7 @@ bash ${SKILL_DIR}/setup.sh
 
    继续处理剩余 {M} 个文件？
    ```
-
-   **en**：
-   ```
-   Progress: 5/{N} done
-
-   This batch:
-   - New source summaries: 5
-   - New entity pages: 3
-   - Updated pages: 7
-
-   Continue with remaining {M} files?
-   ```
+   （英文版按「输出语言规则」生成，结构相同。）
 
 6. **全部完成后**：
    - 运行一次 index.md 全量更新
@@ -529,19 +381,7 @@ bash ${SKILL_DIR}/setup.sh
    新增页面：{total_new}
    更新页面：{total_updated}
    ```
-
-   **en**：
-   ```
-   Batch ingest complete!
-
-   Processed {N} files:
-   - Success: {S}
-   - Skipped (empty/unsupported): {K}
-   - Failed: {F}
-
-   New pages: {total_new}
-   Updated pages: {total_updated}
-   ```
+   （英文版按「输出语言规则」生成，结构相同。）
 
 ---
 
@@ -549,11 +389,9 @@ bash ${SKILL_DIR}/setup.sh
 
 ### 步骤
 
-1. **确认知识库路径**（CWD 检查）：
-   - 先检查当前工作目录是否包含 `.wiki-schema.md` → 用当前目录
-   - 不包含 → 回退到读取 `~/.llm-wiki-path`
-   - 两个都没有 → 提示用户先初始化知识库
-   - 读取 `.wiki-schema.md` 的"语言"字段，确定 `WIKI_LANG`
+1. **确认知识库路径**：
+   - 执行**通用前置检查**（见上方定义），获取知识库根路径和 `WIKI_LANG`
+   - 如果没有可用知识库，提示用户先初始化
 2. **读取 index.md** 了解知识库全貌
 3. **搜索相关页面**：
    - 先在 index.md 中定位相关分类和条目
@@ -576,12 +414,11 @@ bash ${SKILL_DIR}/setup.sh
 - 用户主动说"检查知识库"
 - 每次 ingest 后，如果素材总数是 10 的倍数，主动建议运行 lint
 
-### 前置检查（含多知识库 CWD 检查）
+### 前置检查
 
-- 先检查当前工作目录是否包含 `.wiki-schema.md` → 用当前目录
-- 不包含 → 回退到读取 `~/.llm-wiki-path`
-- 两个都没有 → 提示用户先初始化知识库
-- 读取 `.wiki-schema.md` 的"语言"字段，确定 `WIKI_LANG`
+执行**通用前置检查**（见上方定义）。如果没有可用知识库，提示用户先初始化。
+
+1. **确定检查范围**：
    - 最近更新的 10 个页面（按文件修改时间排序）
    - 随机抽查的 10 个页面（避免遗漏旧页面的问题）
    - 如果页面总数 <= 20，检查全部
@@ -627,25 +464,7 @@ bash ${SKILL_DIR}/setup.sh
    缺失索引：
    - {文件名} 存在但未记录在 index.md 中
    ```
-
-   **en**：
-   ```
-   Wiki Health Check Report
-
-   Scope: 10 recently updated + 10 random pages ({N} total)
-
-   Orphan pages (no other page links to them):
-   - [[some page]] → suggest adding link from [[related page]]
-
-   Broken links (linked but don't exist):
-   - [[some concept]] → suggest creating new page
-
-   Conflicting info:
-   - On "XX", [[page A]] says Y, but [[page B]] says Z
-
-   Missing from index:
-   - {filename} exists but not recorded in index.md
-   ```
+   （英文版按「输出语言规则」生成，结构相同。）
 
 4. **询问用户**：要自动修复哪些问题？（按 `WIKI_LANG` 用对应语言提问）
 
@@ -653,12 +472,9 @@ bash ${SKILL_DIR}/setup.sh
 
 ## 工作流 6：status（查看状态）
 
-### 前置检查（含多知识库 CWD 检查）
+### 前置检查
 
-- 先检查当前工作目录是否包含 `.wiki-schema.md` → 用当前目录
-- 不包含 → 回退到读取 `~/.llm-wiki-path`
-- 两个都没有 → 提示用户先初始化知识库
-- 读取 `.wiki-schema.md` 的"语言"字段，确定 `WIKI_LANG`
+执行**通用前置检查**（见上方定义）。如果没有可用知识库，提示用户先初始化。
 
 ### 步骤
 
@@ -703,36 +519,7 @@ bash ${SKILL_DIR}/setup.sh
    - 你可能想深入了解 {某主题}，已有 {N} 篇相关素材
    - {某实体} 被 {N} 篇素材提到，值得整理成独立页面
    ```
-
-   **en**：
-   ```
-   Wiki Status: {topic}
-
-   Sources: {total}
-     - Web articles: {N}
-     - X/Twitter: {N}
-     - WeChat: {N}
-     - Xiaohongshu: {N}
-     - Zhihu: {N}
-     - PDF: {N}
-     - Other: {N}
-
-   Wiki pages: {total}
-     - Entity pages: {N}
-     - Topic pages: {N}
-     - Source summaries: {N}
-     - Comparisons: {N}
-     - Synthesis: {N}
-
-   Recent activity:
-   - {date} ingest | {source title}
-   - {date} ingest | {source title}
-   ...
-
-   Suggestions:
-   - You may want to deep-dive into {topic}, {N} related sources available
-   - {entity} is mentioned in {N} sources, worth creating a dedicated page
-   ```
+   （英文版按「输出语言规则」生成，结构相同。）
 
 ---
 
@@ -744,12 +531,11 @@ bash ${SKILL_DIR}/setup.sh
 
 "给我讲讲 XX"、"深度分析 XX"、"综述 XX"、"digest XX"、"全面总结一下 XX"
 
-### 前置检查（含多知识库 CWD 检查）
+### 前置检查
 
-- 先检查当前工作目录是否包含 `.wiki-schema.md` → 用当前目录
-- 不包含 → 回退到读取 `~/.llm-wiki-path`
-- 两个都没有 → 提示用户先初始化知识库
-- 读取 `.wiki-schema.md` 的"语言"字段，确定 `WIKI_LANG`
+执行**通用前置检查**（见上方定义）。如果没有可用知识库，提示用户先初始化。
+
+1. **搜索相关页面**：
    - 用 Grep 在 `wiki/` 下搜索主题关键词
    - 列出将要综合的页面（让用户了解报告覆盖范围）
 
@@ -787,35 +573,7 @@ bash ${SKILL_DIR}/setup.sh
    ## 相关页面
    （列出所有综合来源的链接）
    ```
-
-   **en**：
-   ```markdown
-   # {topic} — Deep Dive Report
-
-   > Synthesized from {N} sources | Generated: {date}
-
-   ## Background
-   (Brief context and importance of this topic)
-
-   ## Key Insights
-   (Ranked by importance, each with source attribution)
-   - Insight 1 (sources: [[source A]], [[source B]])
-   - Insight 2 (source: [[source C]])
-
-   ## Perspectives Compared
-   (If sources disagree, compare here)
-   | Dimension | Source A's view | Source B's view |
-   |-----------|----------------|----------------|
-
-   ## Knowledge Timeline
-   (Chronological or logical development of this topic)
-
-   ## Open Questions
-   (Questions not yet answered by existing sources — good directions for future research)
-
-   ## Related Pages
-   (Links to all synthesized sources)
-   ```
+   （英文版按「输出语言规则」生成，结构相同。）
 
 4. **更新 index.md 和 log.md**：
    - index.md 的"综合分析"分类下添加新报告条目
@@ -836,20 +594,7 @@ bash ${SKILL_DIR}/setup.sh
    - {问题1}
    - {问题2}
    ```
-
-   **en**：
-   ```
-   Deep dive report generated: {topic}
-
-   Synthesized {N} sources:
-   - [[source 1]], [[source 2]]...
-
-   Saved to: wiki/synthesis/{topic}-deep-dive.md
-
-   Open questions to explore further:
-   - {question 1}
-   - {question 2}
-   ```
+   （英文版按「输出语言规则」生成，结构相同。）
 
 ---
 
@@ -859,18 +604,15 @@ bash ${SKILL_DIR}/setup.sh
 
 "画个知识图谱"、"看看关联图"、"graph"、"知识库地图"、"展示知识关联"
 
-### 前置检查（含多知识库 CWD 检查）
+### 前置检查
 
-- 先检查当前工作目录是否包含 `.wiki-schema.md` → 用当前目录
-- 不包含 → 回退到读取 `~/.llm-wiki-path`
-- 两个都没有 → 提示用户先初始化知识库
-- 读取 `.wiki-schema.md` 的"语言"字段，确定 `WIKI_LANG`
+执行**通用前置检查**（见上方定义）。如果没有可用知识库，提示用户先初始化。
 
-2. **扫描双向链接**：
+1. **扫描双向链接**：
    - 遍历 `wiki/` 下所有 `.md` 文件
    - 提取每个文件中的 `[[链接]]` 语法，建立关系列表：`页面A → 页面B`
 
-3. **生成 Mermaid 图表文件** `wiki/knowledge-graph.md`：
+2. **生成 Mermaid 图表文件** `wiki/knowledge-graph.md`：
    ````markdown
    # 知识图谱
 
@@ -892,7 +634,7 @@ bash ${SKILL_DIR}/setup.sh
    - 只展示有双向链接关系的节点（孤立节点不纳入图谱）
    - 如果关系超过 50 条，只保留被引用次数最多的 30 个节点，避免图谱过于密集
 
-4. **向用户展示结果**（按 `WIKI_LANG` 切换语言）：
+3. **向用户展示结果**（按 `WIKI_LANG` 切换语言）：
 
    **zh**：
    ```
@@ -910,20 +652,4 @@ bash ${SKILL_DIR}/setup.sh
    孤立页面（未纳入图谱）：
    - [[某页面]]（建议添加到相关实体页或主题页）
    ```
-
-   **en**：
-   ```
-   Knowledge graph generated!
-
-   {N} nodes, {M} connections
-   File: wiki/knowledge-graph.md
-
-   How to view:
-   - Obsidian: opens and renders directly
-   - VS Code: install Markdown Preview Enhanced
-   - GitHub: renders automatically after upload
-   - Typora: open directly
-
-   Orphan pages (not in graph):
-   - [[some page]] (suggest linking from a related entity or topic page)
-   ```
+   （英文版按「输出语言规则」生成，结构相同。）

@@ -217,6 +217,43 @@ test_batch_ingest_has_step_two() {
     assert_text_contains "$section" "3. **展示文件列表**"
 }
 
+test_english_templates_exist_and_have_placeholders() {
+    assert_path_exists "$REPO_ROOT/templates/index-en-template.md"
+    assert_path_exists "$REPO_ROOT/templates/overview-en-template.md"
+    assert_path_exists "$REPO_ROOT/templates/log-en-template.md"
+
+    assert_file_contains "$REPO_ROOT/templates/index-en-template.md" "{{DATE}}"
+    assert_file_contains "$REPO_ROOT/templates/index-en-template.md" "{{TOPIC}}"
+    assert_file_contains "$REPO_ROOT/templates/overview-en-template.md" "{{DATE}}"
+    assert_file_contains "$REPO_ROOT/templates/overview-en-template.md" "{{TOPIC}}"
+    assert_file_contains "$REPO_ROOT/templates/log-en-template.md" "{{DATE}}"
+    assert_file_contains "$REPO_ROOT/templates/log-en-template.md" "{{TOPIC}}"
+}
+
+test_english_templates_have_no_empty_links() {
+    assert_file_not_contains "$REPO_ROOT/templates/index-en-template.md" "[[]]"
+    assert_file_not_contains "$REPO_ROOT/templates/overview-en-template.md" "[[]]"
+    assert_file_not_contains "$REPO_ROOT/templates/log-en-template.md" "[[]]"
+}
+
+test_skill_md_has_shared_preflight_and_language_rules() {
+    assert_file_contains "$REPO_ROOT/SKILL.md" "## 通用前置检查"
+    assert_file_contains "$REPO_ROOT/SKILL.md" "## 输出语言规则"
+    assert_file_contains "$REPO_ROOT/SKILL.md" "素材 → Source"
+    assert_file_contains "$REPO_ROOT/SKILL.md" "知识图谱 → Knowledge Graph"
+}
+
+test_skill_md_uses_external_english_templates_and_no_english_output_blocks() {
+    assert_file_contains "$REPO_ROOT/SKILL.md" "templates/index-en-template.md"
+    assert_file_contains "$REPO_ROOT/SKILL.md" "templates/overview-en-template.md"
+    assert_file_contains "$REPO_ROOT/SKILL.md" "templates/log-en-template.md"
+    assert_file_not_contains "$REPO_ROOT/SKILL.md" "**English（en）**："
+}
+
+test_setup_wrapper_is_marked_deprecated() {
+    assert_file_contains "$REPO_ROOT/setup.sh" "已废弃：请使用 bash install.sh --platform claude"
+}
+
 test_setup_runs_on_bash_3_2
 test_install_dry_run_for_claude
 test_install_auto_refuses_ambiguous_platforms
@@ -227,5 +264,10 @@ test_uv_tool_install_failure_is_graceful
 test_skill_md_routes_wechat_to_new_tool
 test_templates_have_no_empty_links
 test_batch_ingest_has_step_two
+test_english_templates_exist_and_have_placeholders
+test_english_templates_have_no_empty_links
+test_skill_md_has_shared_preflight_and_language_rules
+test_skill_md_uses_external_english_templates_and_no_english_output_blocks
+test_setup_wrapper_is_marked_deprecated
 
 echo "All regression checks passed."

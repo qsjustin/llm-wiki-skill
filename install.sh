@@ -8,6 +8,11 @@ PLATFORM="auto"
 DRY_RUN=0
 TARGET_DIR=""
 
+# 这些项目都在运行时会被读取或链接：
+# - 入口与说明文件：README / CLAUDE / AGENTS / CHANGELOG
+# - 安装入口：install.sh / setup.sh
+# - 实际执行内容：SKILL.md / scripts / templates / deps
+# - 平台薄入口：platforms（README、CLAUDE、AGENTS 都会引用）
 MANAGED_ITEMS=(
   "SKILL.md"
   "README.md"
