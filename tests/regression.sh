@@ -360,6 +360,77 @@ test_skill_md_phase3_query_mentions_persistence_and_duplicate_handling() {
     assert_text_contains "$section" "不作为主要知识来源"
 }
 
+test_hook_session_start_outputs_context_when_wiki_exists() {
+    local tmp_dir output wiki_root
+    tmp_dir="$(mktemp -d)"
+    trap 'rm -rf "$tmp_dir"' RETURN
+
+    wiki_root="$tmp_dir/my-wiki"
+    mkdir -p "$tmp_dir/home" "$wiki_root"
+    printf '# schema\n' > "$wiki_root/.wiki-schema.md"
+    printf '# index\n' > "$wiki_root/index.md"
+    printf '%s\n' "$wiki_root" > "$tmp_dir/home/.llm-wiki-path"
+
+    output="$(
+        HOME="$tmp_dir/home" \
+        bash "$REPO_ROOT/scripts/hook-session-start.sh" 2>&1
+    )" || fail "hook-session-start.sh should succeed when wiki exists"
+
+    assert_text_contains "$output" "hookSpecificOutput"
+    assert_text_contains "$output" "SessionStart"
+    assert_text_contains "$output" "[llm-wiki] 检测到知识库"
+}
+
+test_install_registers_and_uninstalls_session_start_hook() {
+    local tmp_dir settings_path output
+    tmp_dir="$(mktemp -d)"
+    trap 'rm -rf "$tmp_dir"' RETURN
+
+    mkdir -p "$tmp_dir/home/.claude/skills" "$tmp_dir/bin"
+    settings_path="$tmp_dir/home/.claude/settings.json"
+    cat > "$settings_path" <<'EOF'
+{
+  "enabledPlugins": {
+    "demo": true
+  }
+}
+EOF
+
+    make_stub "$tmp_dir/bin/bun" '#!/bin/sh
+mkdir -p node_modules
+exit 0'
+
+    make_stub "$tmp_dir/bin/lsof" '#!/bin/sh
+exit 1'
+
+    make_stub "$tmp_dir/bin/uv" '#!/bin/sh
+printf "%s\n" "#!/bin/sh" "exit 0" > "'"$tmp_dir"'/bin/wechat-article-to-markdown"
+chmod +x "'"$tmp_dir"'/bin/wechat-article-to-markdown"
+exit 0'
+
+    HOME="$tmp_dir/home" \
+    PATH="$tmp_dir/bin:/usr/bin:/bin:/usr/sbin:/sbin" \
+    bash "$REPO_ROOT/install.sh" --platform claude --install-hooks > /dev/null 2>&1 \
+      || fail "install.sh should register session hook for Claude"
+
+    assert_path_exists "$tmp_dir/home/.claude/settings.json.bak.llm-wiki"
+    assert_file_contains "$settings_path" '"SessionStart"'
+    assert_file_contains "$settings_path" "$tmp_dir/home/.claude/skills/llm-wiki/scripts/hook-session-start.sh"
+
+    HOME="$tmp_dir/home" \
+    PATH="$tmp_dir/bin:/usr/bin:/bin:/usr/sbin:/sbin" \
+    bash "$REPO_ROOT/install.sh" --uninstall-hooks > /dev/null 2>&1 \
+      || fail "install.sh should remove session hook"
+
+    assert_file_not_contains "$settings_path" "hook-session-start.sh"
+    assert_file_contains "$settings_path" '"enabledPlugins"'
+}
+
+test_platform_entries_mention_hook_and_wiki_context() {
+    assert_file_contains "$REPO_ROOT/platforms/claude/CLAUDE.md" "--install-hooks"
+    assert_file_contains "$REPO_ROOT/platforms/codex/AGENTS.md" "优先查阅 wiki/index.md"
+}
+
 test_readme_sections() {
     assert_file_contains "$REPO_ROOT/README.md" "## 前置条件"
     assert_file_contains "$REPO_ROOT/README.md" "## 常见问题"
@@ -655,6 +726,9 @@ test_skill_md_phase2_status_mentions_purpose_presence
 test_skill_md_phase2_has_delete_workflow_and_route
 test_delete_helper_scans_reference_files
 test_skill_md_phase3_query_mentions_persistence_and_duplicate_handling
+test_hook_session_start_outputs_context_when_wiki_exists
+test_install_registers_and_uninstalls_session_start_hook
+test_platform_entries_mention_hook_and_wiki_context
 test_readme_sections
 test_uv_tool_install_failure_is_graceful
 test_skill_md_routes_wechat_to_new_tool

@@ -10,6 +10,12 @@
 bash install.sh --platform claude
 ```
 
+如果你希望 Claude Code 在会话开始时自动感知当前知识库上下文，可以执行：
+
+```bash
+bash install.sh --platform claude --install-hooks
+```
+
 默认安装位置：`~/.claude/skills/llm-wiki`
 
 ## 兼容入口

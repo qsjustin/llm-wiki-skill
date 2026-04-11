@@ -7,8 +7,11 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SOURCE_REGISTRY_SCRIPT="$SCRIPT_DIR/scripts/source-registry.sh"
 ADAPTER_STATE_SCRIPT="$SCRIPT_DIR/scripts/adapter-state.sh"
 PLATFORM="auto"
+PLATFORM_EXPLICIT=0
 DRY_RUN=0
 TARGET_DIR=""
+INSTALL_HOOKS=0
+UNINSTALL_HOOKS=0
 
 # 这些项目都在运行时会被读取或链接：
 # - 入口与说明文件：README / CLAUDE / AGENTS / CHANGELOG
@@ -43,13 +46,112 @@ usage() {
   cat <<'EOF'
 用法：
   bash install.sh --platform <claude|codex|openclaw|auto> [--dry-run]
+  bash install.sh --platform claude --install-hooks
+  bash install.sh --install-hooks
+  bash install.sh --uninstall-hooks
 
 选项：
-  --platform   目标平台。默认 auto；只有检测到唯一平台时才会自动安装。
-  --dry-run    只打印安装计划，不写入文件。
-  --target-dir 指定技能目标目录（主要给兼容入口内部调用）。
-  -h, --help   显示帮助。
+  --platform         目标平台。默认 auto；只有检测到唯一平台时才会自动安装。
+  --dry-run          只打印安装计划，不写入文件。
+  --target-dir       指定技能目标目录（主要给兼容入口内部调用）。
+  --install-hooks    注册 Claude Code 的 SessionStart hook。
+  --uninstall-hooks  移除 Claude Code 的 SessionStart hook。
+  -h, --help         显示帮助。
 EOF
+}
+
+hook_command_for_skill_dir() {
+  printf 'bash %s/scripts/hook-session-start.sh\n' "$1"
+}
+
+require_jq() {
+  if ! command -v jq >/dev/null 2>&1; then
+    err "注册或移除 hook 需要 jq"
+    exit 1
+  fi
+}
+
+register_claude_session_hook() {
+  local skill_dir="$1"
+  local settings_dir settings_path backup_path hook_command tmp_file
+
+  [ -d "$skill_dir" ] || {
+    err "未找到已安装的 llm-wiki：$skill_dir"
+    exit 1
+  }
+
+  require_jq
+
+  settings_dir="$HOME/.claude"
+  settings_path="$settings_dir/settings.json"
+  backup_path="$settings_dir/settings.json.bak.llm-wiki"
+  hook_command="$(hook_command_for_skill_dir "$skill_dir")"
+
+  if [ "$DRY_RUN" -eq 1 ]; then
+    printf '[dry-run] register SessionStart hook: %s\n' "$hook_command"
+    return 0
+  fi
+
+  mkdir -p "$settings_dir"
+  [ -f "$settings_path" ] || printf '{}\n' > "$settings_path"
+  cp "$settings_path" "$backup_path"
+
+  if jq -e --arg cmd "$hook_command" '[ (.hooks.SessionStart // [])[]? | (.hooks // [])[]? | .command ] | index($cmd) != null' "$settings_path" > /dev/null; then
+    ok "Claude Code SessionStart hook 已存在，跳过"
+    return 0
+  fi
+
+  tmp_file="$(mktemp)"
+  jq --arg cmd "$hook_command" '
+    .hooks = (.hooks // {}) |
+    .hooks.SessionStart = ((.hooks.SessionStart // []) + [{"hooks":[{"type":"command","command":$cmd}]}])
+  ' "$settings_path" > "$tmp_file"
+  mv "$tmp_file" "$settings_path"
+
+  ok "Claude Code SessionStart hook 已注册"
+}
+
+uninstall_claude_session_hook() {
+  local skill_dir="$1"
+  local settings_dir settings_path backup_path hook_command tmp_file
+
+  require_jq
+
+  settings_dir="$HOME/.claude"
+  settings_path="$settings_dir/settings.json"
+  backup_path="$settings_dir/settings.json.bak.llm-wiki"
+  hook_command="$(hook_command_for_skill_dir "$skill_dir")"
+
+  if [ ! -f "$settings_path" ]; then
+    if [ "$DRY_RUN" -eq 1 ]; then
+      printf '[dry-run] uninstall SessionStart hook: %s\n' "$hook_command"
+      return 0
+    fi
+    ok "未找到 Claude Code settings.json，跳过 hook 移除"
+    return 0
+  fi
+
+  if [ "$DRY_RUN" -eq 1 ]; then
+    printf '[dry-run] uninstall SessionStart hook: %s\n' "$hook_command"
+    return 0
+  fi
+
+  cp "$settings_path" "$backup_path"
+
+  tmp_file="$(mktemp)"
+  jq --arg cmd "$hook_command" '
+    .hooks = (.hooks // {}) |
+    .hooks.SessionStart = (
+      (.hooks.SessionStart // [])
+      | map(.hooks = ((.hooks // []) | map(select(.command != $cmd))))
+      | map(select((.hooks // []) | length > 0))
+    ) |
+    if ((.hooks.SessionStart // []) | length) == 0 then del(.hooks.SessionStart) else . end |
+    if (.hooks | length) == 0 then del(.hooks) else . end
+  ' "$settings_path" > "$tmp_file"
+  mv "$tmp_file" "$settings_path"
+
+  ok "Claude Code SessionStart hook 已移除"
 }
 
 load_dependency_skills() {
@@ -321,6 +423,7 @@ while [ $# -gt 0 ]; do
     --platform)
       [ $# -ge 2 ] || { err "--platform 需要一个值"; usage; exit 1; }
       PLATFORM="$2"
+      PLATFORM_EXPLICIT=1
       shift 2
       ;;
     --dry-run)
@@ -331,6 +434,14 @@ while [ $# -gt 0 ]; do
       [ $# -ge 2 ] || { err "--target-dir 需要一个值"; usage; exit 1; }
       TARGET_DIR="$2"
       shift 2
+      ;;
+    --install-hooks)
+      INSTALL_HOOKS=1
+      shift
+      ;;
+    --uninstall-hooks)
+      UNINSTALL_HOOKS=1
+      shift
       ;;
     -h|--help)
       usage
@@ -343,6 +454,15 @@ while [ $# -gt 0 ]; do
       ;;
   esac
 done
+
+if [ "$INSTALL_HOOKS" -eq 1 ] && [ "$UNINSTALL_HOOKS" -eq 1 ]; then
+  err "--install-hooks 和 --uninstall-hooks 不能同时使用"
+  exit 1
+fi
+
+if [ "$PLATFORM" = "auto" ] && { [ "$INSTALL_HOOKS" -eq 1 ] || [ "$UNINSTALL_HOOKS" -eq 1 ]; }; then
+  PLATFORM="claude"
+fi
 
 if [ "$PLATFORM" = "auto" ]; then
   detected_platforms=()
@@ -361,7 +481,11 @@ if [ "$PLATFORM" = "auto" ]; then
 fi
 
 SKILL_ROOT="$(resolve_skill_root "$PLATFORM")"
-load_dependency_skills
+
+if { [ "$INSTALL_HOOKS" -eq 1 ] || [ "$UNINSTALL_HOOKS" -eq 1 ]; } && [ "$PLATFORM" != "claude" ]; then
+  err "只有 Claude Code 支持 SessionStart hook"
+  exit 1
+fi
 
 if [ -n "$TARGET_DIR" ]; then
   TARGET_SKILL_DIR="$TARGET_DIR"
@@ -369,6 +493,22 @@ if [ -n "$TARGET_DIR" ]; then
 else
   TARGET_SKILL_DIR="$SKILL_ROOT/$SKILL_NAME"
 fi
+
+if [ "$UNINSTALL_HOOKS" -eq 1 ]; then
+  uninstall_claude_session_hook "$TARGET_SKILL_DIR"
+  echo ""
+  ok "llm-wiki hook 已移除"
+  exit 0
+fi
+
+if [ "$INSTALL_HOOKS" -eq 1 ] && [ "$PLATFORM_EXPLICIT" -eq 0 ] && [ -z "$TARGET_DIR" ]; then
+  register_claude_session_hook "$TARGET_SKILL_DIR"
+  echo ""
+  ok "llm-wiki hook 已准备完成"
+  exit 0
+fi
+
+load_dependency_skills
 
 echo ""
 echo "================================"
@@ -389,6 +529,10 @@ install_uv_tools
 print_source_boundary
 check_environment
 print_adapter_states
+
+if [ "$INSTALL_HOOKS" -eq 1 ]; then
+  register_claude_session_hook "$TARGET_SKILL_DIR"
+fi
 
 echo ""
 ok "llm-wiki 已准备完成"

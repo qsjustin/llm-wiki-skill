@@ -1,5 +1,7 @@
 # Codex 入口
 
+<!-- llm-wiki context: 如有知识库，优先查阅 wiki/index.md -->
+
 这是 Codex 的薄入口文件。共享说明看 [../../README.md](../../README.md)，核心能力看 [../../SKILL.md](../../SKILL.md)。
 
 ## Codex 应该怎么装
