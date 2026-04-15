@@ -51,6 +51,8 @@ bash install.sh --platform openclaw
 - Codex: `~/.codex/skills/llm-wiki`（如果你旧环境还在用 `~/.Codex/skills`，安装器也会兼容）
 - OpenClaw: `~/.openclaw/skills/llm-wiki`
 
+如果你装的是 Claude Code，安装完成后还会一并带上 `/llm-wiki-upgrade`。以后要更新核心主线，可以直接让 Claude 执行这个命令。
+
 如果 OpenClaw 不是这一路径，也可以显式传入 `--target-dir <你的技能目录>/llm-wiki`。
 
 ### 更新
@@ -81,6 +83,8 @@ bash install.sh --upgrade --platform openclaw --target-dir <你的技能目录>/
 bash install.sh --upgrade --platform <你的平台> --with-optional-adapters
 ```
 
+如果你是在 Claude Code 里用默认安装目录，后续也可以直接执行 `/llm-wiki-upgrade` 完成这条“核心优先”的升级；需要自动提取能力时，再让它继续执行带 `--with-optional-adapters` 的升级。
+
 ## 来源边界
 
 这一步已经把安装输出、状态说明、文档和回归测试统一到同一份来源定义。仓库里的权威清单是 `scripts/source-registry.tsv`，URL 和文件路由也统一通过 `scripts/source-registry.sh` 读取。
@@ -108,6 +112,7 @@ bash install.sh --upgrade --platform <你的平台> --with-optional-adapters
 - **智能去重**：SHA256 缓存跳过未变化的素材，批量处理时不浪费 token
 - **智能素材路由**：根据 URL 域名自动选择最佳提取方式
 - **核心优先安装**：默认只准备知识库主线，网页 / X / 公众号 / YouTube / 知乎提取按需显式开启
+- **Claude 伴随升级命令**：安装后自带 `/llm-wiki-upgrade`，以后更新主线不用每次重新找仓库地址
 - **素材删除**：级联删除素材时自动清理关联页面、断链和缓存
 - **查询结果持久化**：有价值的综合回答可保存回知识库，越用越完整
 - **自动上下文注入**：SessionStart hook 让 agent 每次会话自动感知知识库（Claude Code）
@@ -142,6 +147,14 @@ bash install.sh --upgrade --platform <你的平台> --with-optional-adapters
 - OpenClaw: `bash install.sh --platform openclaw`
 
 只有在环境里明确只存在一个平台目录时，才建议用 `--platform auto`。
+
+### Claude Code 里可以直接用命令更新吗？
+
+可以。默认安装完成后，会一并带上 `/llm-wiki-upgrade`。
+
+这条命令默认只更新知识库核心主线，不会顺手刷新网页 / X / 微信公众号 / YouTube / 知乎自动提取能力。
+
+如果你需要这些自动提取能力，再让 Claude 继续执行带 `--with-optional-adapters` 的升级即可。
 
 ### 如果我想启用网页 / X / 微信公众号 / YouTube 自动提取怎么办？
 

@@ -36,6 +36,14 @@ MANAGED_ITEMS=(
 
 DEP_SKILLS=()
 
+list_companion_skill_sources() {
+  case "$1" in
+    claude)
+      printf '%s\n' "platforms/claude/companions/llm-wiki-upgrade"
+      ;;
+  esac
+}
+
 # 微信工具 URL 从共享配置读取，与 adapter-state.sh 保持一致
 source "$SCRIPT_DIR/scripts/shared-config.sh"
 source "$SCRIPT_DIR/scripts/runtime-context.sh"
@@ -247,6 +255,28 @@ install_dependency_skills() {
   done
 }
 
+install_companion_skills() {
+  local platform="$1"
+  local skill_root="$2"
+  local skill_rel skill_source skill_target skill_name
+
+  while IFS= read -r skill_rel; do
+    [ -n "$skill_rel" ] || continue
+
+    skill_source="$SCRIPT_DIR/$skill_rel"
+    skill_name="$(basename "$skill_rel")"
+    skill_target="$skill_root/$skill_name"
+
+    if [ ! -d "$skill_source" ]; then
+      warn "$skill_name：仓库中未找到源文件，跳过"
+      continue
+    fi
+
+    copy_item "$skill_source" "$skill_target"
+    ok "$skill_name 已安装到 $skill_target"
+  done < <(list_companion_skill_sources "$platform")
+}
+
 install_bundle() {
   local target_dir="$1"
   local item source_path target_path
@@ -435,6 +465,17 @@ print_optional_adapter_hint() {
   echo "  $command"
 }
 
+print_claude_upgrade_hint() {
+  local platform="$1"
+
+  if [ "$platform" != "claude" ]; then
+    return 0
+  fi
+
+  echo ""
+  echo "提示：Claude Code 安装完成后，还可以直接用 /llm-wiki-upgrade 更新核心主线。"
+}
+
 while [ $# -gt 0 ]; do
   case "$1" in
     --platform)
@@ -558,6 +599,7 @@ if [ "$UPGRADE" -eq 1 ]; then
 
     run_cmd mkdir -p "$upgrade_target"
     install_bundle "$upgrade_target"
+    install_companion_skills "$upgrade_platform" "$upgrade_root"
     bootstrap_optional_adapters "$upgrade_root"
     ok "$upgrade_platform 的 llm-wiki 已更新"
   done
@@ -574,6 +616,7 @@ if [ "$UPGRADE" -eq 1 ]; then
   else
     print_optional_adapter_hint
   fi
+  print_claude_upgrade_hint "$PLATFORM"
 
   echo ""
   ok "llm-wiki 升级完成"
@@ -641,6 +684,7 @@ run_cmd mkdir -p "$SKILL_ROOT"
 run_cmd mkdir -p "$TARGET_SKILL_DIR"
 
 install_bundle "$TARGET_SKILL_DIR"
+install_companion_skills "$PLATFORM" "$SKILL_ROOT"
 bootstrap_optional_adapters "$SKILL_ROOT"
 print_source_boundary
 if [ "$WITH_OPTIONAL_ADAPTERS" -eq 1 ]; then
@@ -649,6 +693,7 @@ if [ "$WITH_OPTIONAL_ADAPTERS" -eq 1 ]; then
 else
   print_optional_adapter_hint
 fi
+print_claude_upgrade_hint "$PLATFORM"
 
 if [ "$INSTALL_HOOKS" -eq 1 ]; then
   register_claude_session_hook "$TARGET_SKILL_DIR"

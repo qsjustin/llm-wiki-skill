@@ -24,6 +24,8 @@ bash install.sh --platform claude --install-hooks
 
 默认安装位置：`~/.claude/skills/llm-wiki`
 
+安装完成后，还会一并带上 `/llm-wiki-upgrade`。以后要更新核心主线，可以直接让 Claude 执行这个命令；如果还要刷新网页 / X / 微信公众号 / YouTube / 知乎自动提取能力，再继续执行带 `--with-optional-adapters` 的升级。
+
 ## 兼容入口
 
 老用户仍然可以继续执行：

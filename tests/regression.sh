@@ -136,12 +136,14 @@ exit 0"
     )" || fail "setup.sh should run successfully under bash 3.2"
 
     assert_path_exists "$tmp_dir/home/.claude/skills/llm-wiki/SKILL.md"
+    assert_path_exists "$tmp_dir/home/.claude/skills/llm-wiki-upgrade/SKILL.md"
     assert_path_exists "$tmp_dir/home/.claude/skills/llm-wiki/deps/baoyu-url-to-markdown"
     [ ! -d "$tmp_dir/home/.claude/skills/baoyu-url-to-markdown" ] || fail "Did not expect optional adapters to be enabled by default"
     [ ! -f "$tmp_dir/tool.log" ] || fail "Did not expect bun or uv to run for core-only setup"
 
     assert_text_contains "$output" "当前只准备了知识库核心主线"
     assert_text_contains "$output" "--with-optional-adapters"
+    assert_text_contains "$output" "/llm-wiki-upgrade"
 }
 
 test_install_with_optional_adapters_bootstraps_dependencies() {
@@ -237,7 +239,28 @@ exit 1'
     assert_path_exists "$tmp_dir/home/.openclaw/skills/llm-wiki/install.sh"
     assert_path_exists "$tmp_dir/home/.openclaw/skills/llm-wiki/scripts/source-registry.sh"
     assert_path_exists "$tmp_dir/home/.openclaw/skills/llm-wiki/deps/baoyu-url-to-markdown"
+    [ ! -d "$tmp_dir/home/.openclaw/skills/llm-wiki-upgrade" ] || fail "Did not expect Claude-only companion skill to be installed for OpenClaw"
     [ ! -d "$tmp_dir/home/.openclaw/skills/baoyu-url-to-markdown" ] || fail "Did not expect optional adapters to be enabled by default"
+}
+
+test_upgrade_refreshes_claude_companion_skill() {
+    local tmp_dir output
+    tmp_dir="$(mktemp -d)"
+    trap 'rm -rf "$tmp_dir"' RETURN
+
+    mkdir -p "$tmp_dir/home/.claude/skills/llm-wiki" "$tmp_dir/home/.claude/skills/llm-wiki-upgrade"
+    printf '# Changelog\n\n## v2.3.0 (2026-04-15)\n' > "$tmp_dir/home/.claude/skills/llm-wiki/CHANGELOG.md"
+    printf 'old\n' > "$tmp_dir/home/.claude/skills/llm-wiki-upgrade/SKILL.md"
+
+    output="$(
+        HOME="$tmp_dir/home" \
+        bash "$REPO_ROOT/install.sh" --upgrade --platform claude 2>&1
+    )" || fail "install.sh --upgrade should refresh the Claude companion skill"
+
+    assert_text_contains "$output" "/llm-wiki-upgrade"
+    assert_path_exists "$tmp_dir/home/.claude/skills/llm-wiki-upgrade/SKILL.md"
+    assert_file_contains "$tmp_dir/home/.claude/skills/llm-wiki-upgrade/SKILL.md" "--with-optional-adapters"
+    assert_file_contains "$tmp_dir/home/.claude/skills/llm-wiki-upgrade/SKILL.md" 'bash "$TMP_DIR/llm-wiki-skill/install.sh" --upgrade --platform claude'
 }
 
 test_init_fills_language_placeholder() {
@@ -486,6 +509,7 @@ exit 0'
 }
 
 test_platform_entries_mention_hook_and_wiki_context() {
+    assert_file_contains "$REPO_ROOT/platforms/claude/CLAUDE.md" "/llm-wiki-upgrade"
     assert_file_contains "$REPO_ROOT/platforms/claude/CLAUDE.md" "--install-hooks"
     assert_file_contains "$REPO_ROOT/platforms/codex/AGENTS.md" "优先查阅 wiki/index.md"
     assert_file_contains "$REPO_ROOT/platforms/openclaw/README.md" "--upgrade --platform openclaw --target-dir <你的技能目录>/llm-wiki"
@@ -495,6 +519,7 @@ test_root_entries_explain_core_only_optional_and_target_dir() {
     assert_file_contains "$REPO_ROOT/AGENTS.md" "--with-optional-adapters"
     assert_file_contains "$REPO_ROOT/AGENTS.md" "默认只准备知识库核心主线"
     assert_file_contains "$REPO_ROOT/AGENTS.md" "--target-dir <你的技能目录>/llm-wiki"
+    assert_file_contains "$REPO_ROOT/CLAUDE.md" "/llm-wiki-upgrade"
     assert_file_contains "$REPO_ROOT/CLAUDE.md" "--with-optional-adapters"
     assert_file_contains "$REPO_ROOT/CLAUDE.md" "默认只准备知识库核心主线"
 }
@@ -512,6 +537,7 @@ test_changelog_mentions_wiki_core_upgrades() {
     assert_file_contains "$REPO_ROOT/CHANGELOG.md" "purpose.md"
     assert_file_contains "$REPO_ROOT/CHANGELOG.md" "SessionStart hook"
     assert_file_contains "$REPO_ROOT/CHANGELOG.md" "delete 工作流"
+    assert_file_contains "$REPO_ROOT/CHANGELOG.md" "/llm-wiki-upgrade"
     assert_file_contains "$REPO_ROOT/CHANGELOG.md" "--with-optional-adapters"
     assert_file_contains "$REPO_ROOT/CHANGELOG.md" "核心主线"
 }
@@ -523,12 +549,19 @@ test_readme_sections() {
     assert_file_contains "$REPO_ROOT/README.md" "bash install.sh --platform codex"
     assert_file_contains "$REPO_ROOT/README.md" "bash install.sh --platform openclaw"
     assert_file_contains "$REPO_ROOT/README.md" "--with-optional-adapters"
+    assert_file_contains "$REPO_ROOT/README.md" "/llm-wiki-upgrade"
     assert_file_contains "$REPO_ROOT/README.md" "--target-dir <你的技能目录>/llm-wiki"
     assert_file_contains "$REPO_ROOT/README.md" "--upgrade --platform openclaw --target-dir <你的技能目录>/llm-wiki"
     assert_file_contains "$REPO_ROOT/README.md" "wechat-article-to-markdown"
     assert_file_not_contains "$REPO_ROOT/README.md" "bash setup.sh"
     assert_file_not_contains "$REPO_ROOT/README.md" "x-article-extractor"
     assert_file_not_contains "$REPO_ROOT/README.md" "baoyu-danger-x-to-markdown"
+}
+
+test_claude_upgrade_companion_source_exists() {
+    assert_path_exists "$REPO_ROOT/platforms/claude/companions/llm-wiki-upgrade/SKILL.md"
+    assert_file_contains "$REPO_ROOT/platforms/claude/companions/llm-wiki-upgrade/SKILL.md" "--with-optional-adapters"
+    assert_file_contains "$REPO_ROOT/platforms/claude/companions/llm-wiki-upgrade/SKILL.md" 'bash "$TMP_DIR/llm-wiki-skill/install.sh" --upgrade --platform claude'
 }
 
 test_uv_tool_install_failure_is_graceful() {
@@ -976,6 +1009,7 @@ test_install_auto_refuses_ambiguous_platforms
 test_upgrade_auto_refuses_ambiguous_installed_platforms
 test_upgrade_uses_explicit_target_dir
 test_upgrade_fails_when_explicit_target_dir_is_missing
+test_upgrade_refreshes_claude_companion_skill
 test_install_openclaw_copies_bundle
 test_init_fills_language_placeholder
 test_phase1_templates_exist
@@ -996,6 +1030,7 @@ test_root_entries_explain_core_only_optional_and_target_dir
 test_skill_md_phase5_lint_mentions_confidence_audit
 test_changelog_mentions_wiki_core_upgrades
 test_readme_sections
+test_claude_upgrade_companion_source_exists
 test_uv_tool_install_failure_is_graceful
 test_skill_md_routes_wechat_to_new_tool
 test_templates_have_no_empty_links
