@@ -22,6 +22,8 @@ bash install.sh --platform claude
 bash install.sh --platform claude --with-optional-adapters
 ```
 
+安装完成后，还会一并带上 `/llm-wiki-upgrade`。以后要更新核心主线，可以直接让 Claude 执行这个命令。
+
 ## 推送前测试规则
 
 每次 `git push` 前必须验证，按改动范围选深度：

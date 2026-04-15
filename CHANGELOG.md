@@ -1,5 +1,16 @@
 # Changelog
 
+## v2.4.0 (2026-04-15)
+
+### 新增
+
+- `platforms/claude/companions/llm-wiki-upgrade/SKILL.md`：Claude 安装后随附 `/llm-wiki-upgrade`，以后可以直接从命令入口更新 llm-wiki
+
+### 改进
+
+- `install.sh`：恢复 Claude 专属伴生命令安装与升级同步，GitHub 地址安装和 `/llm-wiki-upgrade` 两条路线现在共享同一套更新边界
+- `README.md`、`CLAUDE.md`、`platforms/claude/CLAUDE.md`：补充 `/llm-wiki-upgrade` 的使用说明，明确默认只更新核心主线
+
 ## v2.3.0 (2026-04-15)
 
 ### 改进
