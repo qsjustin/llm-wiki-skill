@@ -941,17 +941,16 @@ bash ${SKILL_DIR}/scripts/adapter-state.sh classify-run <source_id> <exit_code> 
    做主题社区聚类，并写入 `wiki/graph-data.json`（>2MB 自动降级，单节点只留 500 行）。
    依赖 `jq`（`brew install jq`）。
 
-2c. **生成交互式图谱 HTML**（`wiki/knowledge-graph.html`）：
+2c. **生成交互式图谱 HTML**（wash 水彩卡片风）：
 
    ```bash
    bash scripts/build-graph-html.sh "$WIKI_ROOT"
    ```
 
-   脚本把 `templates/graph-template-header.html` + `graph-data.json`（已做
-   `</script>` 转义）+ `templates/graph-template-footer.html` 拼成单文件 HTML，
-   并把 `vis-network.min.js` / `marked.min.js` / `purify.min.js` 三件套 + LICENSE
-   复制到 `wiki/`。首帧只渲染 top-30 节点（按社区代表 + 度数补齐），
-   搜索框、关系类型筛选、双击抽屉、键盘导航都在前端即时生效。
+   生成 `wiki/knowledge-graph.html`。脚本把 `graph-data.json`（已做 `</script>` 转义）
+   内嵌进 `<script id="graph-data" type="application/json">`，使用本地 `d3` + `roughjs` +
+   `marked` + `purify`，离线双击即可打开。包含搜索框、关系类型筛选、节点抽屉、
+   社区聚类等交互功能。
 
 3. **向用户展示结果**（按 `WIKI_LANG` 切换语言）：
 
@@ -964,8 +963,7 @@ bash ${SKILL_DIR}/scripts/adapter-state.sh classify-run <source_id> <exit_code> 
    查看方式：
    - 交互式（推荐）：双击 wiki/knowledge-graph.html
      （建议 Chrome / Firefox；Safari 若提示"已阻止脚本"，
-      可在 wiki/ 下跑 `python3 -m http.server 8000` 再访问
-      http://localhost:8000/knowledge-graph.html）
+      可在 wiki/ 下跑 `python3 -m http.server 8000` 再访问）
    - Mermaid 静态图：wiki/knowledge-graph.md
      （Obsidian / VS Code Markdown Preview Enhanced / GitHub / Typora 均可渲染）
 

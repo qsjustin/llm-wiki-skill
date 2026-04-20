@@ -1,5 +1,24 @@
 # Changelog
 
+## v3.0.0 (2026-04-20)
+
+### 新增
+
+- **水彩卡片风交互式知识图谱**：`build-graph-html.sh` 生成 `wiki/knowledge-graph.html`，使用 d3 + rough.js 水彩卡片风格，离线双击即可查看（搜索、过滤、社区聚类、节点详情抽屉）
+- `templates/graph-styles/wash/`：wash 水彩卡片图谱模板（header / footer / graph-wash.js）
+- `deps/d3.min.js`、`deps/rough.min.js`：本地 vendor，不依赖 CDN
+- `tests/graph-html-styles.regression-1.sh`：回归测试覆盖本地 vendor、模板注入和离线资产复制
+
+### 移除
+
+- classic（vis-network）和 paper（手绘笔记本）图谱风格及相关模板、vendor 资产
+- `--style` 参数和二参数兼容调用方式
+
+### 改进
+
+- `scripts/build-graph-html.sh`：简化为 wash-only 单风格输出，接口更简洁
+- 图谱运行时：读取内嵌 `graph-data` JSON，并对 markdown 详情面板做 DOMPurify 清洗
+
 ## v2.6.0 (2026-04-17)
 
 ### 新增
