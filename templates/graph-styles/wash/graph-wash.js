@@ -185,6 +185,35 @@
     return { w: width, h: height };
   }
 
+  const labelSegmenter = new Intl.Segmenter("zh", { granularity: "grapheme" });
+
+  function truncateLabel(label, maxWidth) {
+    if (!label || typeof label !== "string") {
+      console.warn("[wiki] truncateLabel: invalid input", label);
+      return { text: "", truncated: false };
+    }
+
+    const charWidth = (g) => /[一-鿿]/.test(g) ? 15 : 8.5;
+    const pad = 22;
+    const ellipsis = "…";
+    const ellipsisW = 8;
+    const graphemes = Array.from(labelSegmenter.segment(label), s => s.segment);
+
+    let totalW = 0;
+    for (const g of graphemes) totalW += charWidth(g);
+    if (totalW + pad <= maxWidth) return { text: label, truncated: false };
+
+    let out = "";
+    let w = 0;
+    for (const g of graphemes) {
+      const cw = charWidth(g);
+      if (w + cw + ellipsisW + pad > maxWidth) break;
+      out += g;
+      w += cw;
+    }
+    return { text: out + ellipsis, truncated: true };
+  }
+
   // Jittered rounded rectangle path (slight imperfection for hand feel)
   function cardPath(w, h, r, seed) {
     const hx = w / 2, hy = h / 2;
@@ -446,10 +475,15 @@
           .style("fill", nodeStrokeColor(d))
           .style("stroke", nodeStrokeColor(d));
         // label inside card
+        const label = d.label || d.id;
+        const { text: displayLabel, truncated } = truncateLabel(label, 180);
         gg.append("text").attr("class", "node-label node-label--in")
           .attr("text-anchor", "middle")
           .attr("dy", "0.35em")
-          .text(d.label || d.id);
+          .text(displayLabel);
+        if (truncated) {
+          gg.append("title").text(label);
+        }
         // small type glyph top-right
         gg.append("text").attr("class", "node-glyph")
           .attr("text-anchor", "end")
