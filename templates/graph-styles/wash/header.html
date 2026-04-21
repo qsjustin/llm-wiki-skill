@@ -364,6 +364,56 @@ html, body {
 .iconbtn:hover { border-color: var(--paper-ink); color: var(--paper-ink); background: rgba(255,252,243,0.6); }
 .iconbtn[data-on="1"] { border-color: var(--pen-rust); color: var(--pen-rust); background: rgba(255,252,243,0.9); }
 .iconbtn svg { width: 16px; height: 16px; }
+.iconbtn--labeled {
+  width: auto;
+  padding: 0 12px;
+  gap: 6px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  border-radius: 18px;
+}
+.iconbtn__text {
+  color: var(--paper-ink-dim);
+  line-height: 1;
+}
+.iconbtn--labeled:hover .iconbtn__text { color: var(--paper-ink); }
+[data-tip] { position: relative; }
+[data-tip]:hover::after,
+[data-tip]:focus-visible::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  max-width: min(240px, calc(100vw - 24px));
+  white-space: normal;
+  word-break: break-word;
+  padding: 5px 10px;
+  background: var(--paper-ink);
+  color: #fdf7e6;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  border-radius: 4px;
+  box-shadow: 1px 2px 0 rgba(43,38,32,0.15);
+  z-index: 40;
+  pointer-events: none;
+  animation: tip-in 140ms ease-out;
+}
+@media (max-width: 480px) {
+  [data-tip]:hover::after,
+  [data-tip]:focus-visible::after {
+    right: auto;
+    left: 0;
+    max-width: calc(100vw - 16px);
+  }
+}
+@keyframes tip-in {
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-tip]:hover::after,
+  [data-tip]:focus-visible::after { animation: none; }
+}
 
 /* ---------- Canvas ---------- */
 .canvas-wrap {
@@ -1008,6 +1058,8 @@ body[data-variant="wash"] {
   .margin-line { display: none; }
   .brand, .tools, .footer { padding-left: 20px; }
   .minimap { display: none; }
+  .iconbtn--labeled { width: 34px; padding: 0; }
+  .iconbtn__text { display: none; }
 }
 </style>
 </head>
@@ -1053,21 +1105,24 @@ body[data-variant="wash"] {
 
     <div class="tools__spacer"></div>
 
-    <button class="iconbtn" id="btn-refit" title="重新排布">
+    <button class="iconbtn iconbtn--labeled" id="btn-refit" aria-label="重新排布" data-tip="重新布置节点">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
         <path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1M5.6 18.4l2.1-2.1m8.6-8.6 2.1-2.1"/>
       </svg>
+      <span class="iconbtn__text">重排</span>
     </button>
-    <button class="iconbtn" id="btn-fit" title="适应画布">
+    <button class="iconbtn iconbtn--labeled" id="btn-fit" aria-label="适应画布" data-tip="适应画布 · 回到居中">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
         <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>
       </svg>
+      <span class="iconbtn__text">居中</span>
     </button>
-    <button class="iconbtn" id="btn-tweaks" title="视觉变体">
+    <button class="iconbtn iconbtn--labeled" id="btn-tweaks" aria-label="视觉设置" data-tip="视觉设置">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
         <circle cx="12" cy="12" r="3"/>
         <path d="M12 2v4M12 18v4M2 12h4M18 12h4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/>
       </svg>
+      <span class="iconbtn__text">设置</span>
     </button>
   </div>
 
