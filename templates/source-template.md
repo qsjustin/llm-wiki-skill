@@ -2,6 +2,7 @@
 tags: [素材摘要]
 created: {{DATE}}
 updated: {{DATE}}
+sources: []
 source_type: {{TYPE}}
 source_path: {{RAW_PATH}}
 ---
