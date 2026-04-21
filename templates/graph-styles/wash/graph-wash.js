@@ -25,6 +25,17 @@
     )
   };
 
+  const safeLocalStorage = {
+    get(key) {
+      try { return localStorage.getItem(key); }
+      catch (err) { console.warn("[wiki] localStorage.get failed:", key, err); return null; }
+    },
+    set(key, value) {
+      try { localStorage.setItem(key, value); }
+      catch (err) { console.warn("[wiki] localStorage.set failed:", key, err); }
+    }
+  };
+
   // ---------- tokens (variants) ----------
   const VARIANTS = {
     wash: {
