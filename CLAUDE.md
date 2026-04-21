@@ -39,6 +39,10 @@ bash install.sh --platform claude --with-optional-adapters
 
 设计文档或 plan 写完准备动手改代码时，也先开分支再开始实现。
 
+## 已记录的解决方案
+
+`docs/solutions/` 存放过去解决问题的文档（bug、最佳实践、工作流改进），按类别分目录，每份有 YAML frontmatter（`module`、`tags`、`problem_type`）。涉及已记录领域时（graph、cache、install、lint 等），先搜一下有没有现成经验。
+
 ## 推送前测试规则
 
 每次 `git push` 前必须验证，按改动范围选深度：
