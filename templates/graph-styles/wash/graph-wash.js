@@ -9,6 +9,8 @@
   const svg = d3.select("#canvas");
   const svgNode = svg.node();
   const mmSvg = d3.select("#minimap-svg");
+  const minimapEl = document.getElementById("minimap");
+  const minimapToggle = document.getElementById("minimap-toggle");
 
   // ---------- state ----------
   const state = {
@@ -710,7 +712,7 @@
 
   // ---------- Minimap ----------
   function renderMinimap() {
-    if (!state.nodes.length) return;
+    if (!state.nodes.length || minimapEl.getAttribute("data-collapsed") === "1") return;
     const w = 180, h = 130;
     // bounds
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -1070,6 +1072,22 @@
   });
 
   document.getElementById("dr-close").addEventListener("click", closeDrawer);
+
+  function applyMinimapCollapsed(collapsed) {
+    minimapEl.setAttribute("data-collapsed", collapsed ? "1" : "0");
+    minimapToggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+    minimapToggle.setAttribute("aria-label", collapsed ? "展开小地图" : "折叠小地图");
+  }
+
+  applyMinimapCollapsed(safeLocalStorage.get("wiki-minimap-collapsed") === "1");
+
+  minimapToggle.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const next = minimapEl.getAttribute("data-collapsed") !== "1";
+    applyMinimapCollapsed(next);
+    safeLocalStorage.set("wiki-minimap-collapsed", next ? "1" : "0");
+    if (!next) renderMinimap();
+  });
 
   // ---------- Minimap navigation ----------
   mmSvg.on("click", function (ev) {

@@ -484,6 +484,12 @@ html, body {
   overflow: hidden;
   z-index: 5;
   transform: rotate(0.4deg);
+  transition: width 220ms, height 220ms;
+}
+.minimap[data-collapsed="1"] {
+  width: 88px;
+  height: 22px;
+  overflow: hidden;
 }
 .minimap__label {
   position: absolute;
@@ -496,7 +502,33 @@ html, body {
   border-radius: 3px;
   z-index: 2;
 }
+.minimap[data-collapsed="1"] .minimap__label {
+  top: 2px;
+  left: 6px;
+  background: transparent;
+}
+.minimap__toggle {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  width: 22px;
+  height: 20px;
+  background: transparent;
+  border: none;
+  color: var(--paper-ink-dim);
+  font-size: 14px;
+  cursor: pointer;
+  z-index: 3;
+  transition: transform 180ms;
+}
+.minimap[data-collapsed="1"] .minimap__toggle {
+  transform: rotate(180deg);
+  right: 2px;
+}
 #minimap-svg { width: 100%; height: 100%; cursor: pointer; }
+.minimap[data-collapsed="1"] #minimap-svg {
+  display: none;
+}
 .minimap__viewport {
   fill: rgba(182, 82, 57, 0.15);
   stroke: var(--pen-rust);
@@ -1054,8 +1086,11 @@ body[data-variant="wash"] {
       <button id="zoom-out" title="缩小">−</button>
     </div>
 
-    <div class="minimap">
+    <div class="minimap" id="minimap" data-collapsed="0">
       <div class="minimap__label">小地图</div>
+      <button class="minimap__toggle" id="minimap-toggle"
+              aria-label="折叠小地图" aria-expanded="true"
+              data-tip="折叠/展开小地图">⌄</button>
       <svg id="minimap-svg"></svg>
     </div>
 
