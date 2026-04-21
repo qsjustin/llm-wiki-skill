@@ -1,3 +1,7 @@
+---
+sources: ["attention-is-all-you-need.pdf"]
+---
+
 # Transformer
 
 Transformer 是一种基于自注意力机制的序列到序列模型架构。

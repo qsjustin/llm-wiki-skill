@@ -5,23 +5,24 @@
     "total_nodes": 8,
     "total_edges": 13,
     "initial_view": [
-      "paper",
+      "Attention",
       "Transformer",
       "GPT",
-      "Attention",
       "arch",
       "Decoder",
       "Encoder",
-      "finetune"
+      "finetune",
+      "paper"
     ],
-    "degraded": false
+    "degraded": false,
+    "insights_degraded": false
   },
   "nodes": [
     {
       "id": "Attention",
       "label": "Attention",
       "type": "entity",
-      "community": "arch",
+      "community": "Attention",
       "content": "# Attention\n\n注意力机制是 Transformer 的核心。参见 [[Transformer]]。"
     },
     {
@@ -70,7 +71,7 @@
       "id": "paper",
       "label": "Attention Is All You Need",
       "type": "source",
-      "community": null,
+      "community": "Attention",
       "content": "# Attention Is All You Need\n\n原始论文提出了自注意力机制。\n\n- [[Attention]] <!-- confidence: EXTRACTED -->"
     }
   ],
@@ -79,79 +80,207 @@
       "id": "e1",
       "from": "Attention",
       "to": "Transformer",
-      "type": "EXTRACTED"
+      "type": "EXTRACTED",
+      "weight": 0.733,
+      "source_signal_available": true,
+      "signals": {
+        "co_citation": 0.2,
+        "source_overlap": 1,
+        "type_affinity": 1
+      }
     },
     {
       "id": "e2",
       "from": "Decoder",
       "to": "Transformer",
-      "type": "INFERRED"
+      "type": "INFERRED",
+      "weight": 0.733,
+      "source_signal_available": true,
+      "signals": {
+        "co_citation": 0.2,
+        "source_overlap": 1,
+        "type_affinity": 1
+      }
     },
     {
       "id": "e3",
       "from": "Encoder",
       "to": "Transformer",
-      "type": "EXTRACTED"
+      "type": "EXTRACTED",
+      "weight": 0.733,
+      "source_signal_available": true,
+      "signals": {
+        "co_citation": 0.2,
+        "source_overlap": 1,
+        "type_affinity": 1
+      }
     },
     {
       "id": "e4",
       "from": "GPT",
       "to": "Transformer",
-      "type": "AMBIGUOUS"
+      "type": "AMBIGUOUS",
+      "weight": 0.333,
+      "source_signal_available": true,
+      "signals": {
+        "co_citation": 0,
+        "source_overlap": 0,
+        "type_affinity": 1
+      }
     },
     {
       "id": "e5",
       "from": "Transformer",
       "to": "Attention",
-      "type": "EXTRACTED"
+      "type": "EXTRACTED",
+      "weight": 0.733,
+      "source_signal_available": true,
+      "signals": {
+        "co_citation": 0.2,
+        "source_overlap": 1,
+        "type_affinity": 1
+      }
     },
     {
       "id": "e6",
       "from": "Transformer",
       "to": "Decoder",
-      "type": "EXTRACTED"
+      "type": "EXTRACTED",
+      "weight": 0.733,
+      "source_signal_available": true,
+      "signals": {
+        "co_citation": 0.2,
+        "source_overlap": 1,
+        "type_affinity": 1
+      }
     },
     {
       "id": "e7",
       "from": "Transformer",
       "to": "Encoder",
-      "type": "EXTRACTED"
+      "type": "EXTRACTED",
+      "weight": 0.733,
+      "source_signal_available": true,
+      "signals": {
+        "co_citation": 0.2,
+        "source_overlap": 1,
+        "type_affinity": 1
+      }
     },
     {
       "id": "e8",
       "from": "arch",
       "to": "Attention",
-      "type": "EXTRACTED"
+      "type": "EXTRACTED",
+      "weight": 0.667,
+      "source_signal_available": true,
+      "signals": {
+        "co_citation": 0,
+        "source_overlap": 1,
+        "type_affinity": 1
+      }
     },
     {
       "id": "e9",
       "from": "arch",
       "to": "Decoder",
-      "type": "EXTRACTED"
+      "type": "EXTRACTED",
+      "weight": 0.667,
+      "source_signal_available": true,
+      "signals": {
+        "co_citation": 0,
+        "source_overlap": 1,
+        "type_affinity": 1
+      }
     },
     {
       "id": "e10",
       "from": "arch",
       "to": "Encoder",
-      "type": "EXTRACTED"
+      "type": "EXTRACTED",
+      "weight": 0.667,
+      "source_signal_available": true,
+      "signals": {
+        "co_citation": 0,
+        "source_overlap": 1,
+        "type_affinity": 1
+      }
     },
     {
       "id": "e11",
       "from": "arch",
       "to": "Transformer",
-      "type": "EXTRACTED"
+      "type": "EXTRACTED",
+      "weight": 0.667,
+      "source_signal_available": true,
+      "signals": {
+        "co_citation": 0,
+        "source_overlap": 1,
+        "type_affinity": 1
+      }
     },
     {
       "id": "e12",
       "from": "finetune",
       "to": "GPT",
-      "type": "EXTRACTED"
+      "type": "EXTRACTED",
+      "weight": 0.667,
+      "source_signal_available": true,
+      "signals": {
+        "co_citation": 0,
+        "source_overlap": 1,
+        "type_affinity": 1
+      }
     },
     {
       "id": "e13",
       "from": "paper",
       "to": "Attention",
-      "type": "EXTRACTED"
+      "type": "EXTRACTED",
+      "weight": 0.533,
+      "source_signal_available": true,
+      "signals": {
+        "co_citation": 0,
+        "source_overlap": 1,
+        "type_affinity": 0.6
+      }
     }
-  ]
+  ],
+  "insights": {
+    "surprising_connections": [],
+    "isolated_nodes": [
+      {
+        "id": "finetune",
+        "label": "微调技术",
+        "degree": 1,
+        "community": "finetune"
+      },
+      {
+        "id": "paper",
+        "label": "Attention Is All You Need",
+        "degree": 1,
+        "community": "Attention"
+      }
+    ],
+    "bridge_nodes": [
+      {
+        "id": "Transformer",
+        "label": "Transformer",
+        "community": "arch",
+        "connected_communities": [
+          "Attention",
+          "finetune"
+        ],
+        "community_count": 2
+      }
+    ],
+    "sparse_communities": [],
+    "meta": {
+      "degraded": false,
+      "node_count": 8,
+      "edge_count": 13,
+      "max_insight_nodes": 250,
+      "max_insight_edges": 1000
+    }
+  }
 }

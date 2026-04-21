@@ -5,7 +5,12 @@
   "use strict";
 
   const dataEl = document.getElementById("graph-data");
-  const DATA = dataEl ? JSON.parse(dataEl.textContent) : window.SAMPLE_GRAPH;
+  let DATA;
+  try {
+    DATA = dataEl ? JSON.parse(dataEl.textContent) : window.SAMPLE_GRAPH;
+  } catch (_) {
+    DATA = { meta: {}, nodes: [], edges: [], insights: { surprising_connections: [], isolated_nodes: [], bridge_nodes: [], sparse_communities: [], meta: { degraded: true } } };
+  }
   const svg = d3.select("#canvas");
   const svgNode = svg.node();
   const mmSvg = d3.select("#minimap-svg");
@@ -13,6 +18,8 @@
   const minimapToggle = document.getElementById("minimap-toggle");
   const drawerNeighbors = document.getElementById("dr-neighbors");
   const drawerNeighborsHeading = drawerNeighbors ? drawerNeighbors.querySelector("h4") : null;
+  const insightsBody = document.getElementById("insights-body");
+  const insightsMeta = document.getElementById("insights-meta");
 
   // ---------- state ----------
   const state = {
@@ -23,6 +30,14 @@
     links: [],
     visibleLinks: [],
     communities: {},
+    insights: {
+      surprising_connections: [],
+      isolated_nodes: [],
+      bridge_nodes: [],
+      sparse_communities: [],
+      meta: { degraded: false }
+    },
+    searchIndex: [],
     tweaks: Object.assign(
       { variant: "wash", sizeMode: "uniform", bubbleMode: "wash", nodeStyle: "card" },
       window.__TWEAKS || {}
@@ -120,21 +135,26 @@
 
   // ---------- Prepare data ----------
   function prepareData() {
-    state.nodes = DATA.nodes.map((n, i) => Object.assign({}, n, {
+    state.nodes = (DATA.nodes || []).map((n, i) => Object.assign({}, n, {
       idx: i,
       degree: 0
     }));
-    state.links = DATA.edges.map(e => Object.assign({}, e, {
-      source: e.from, target: e.to
+    state.links = (DATA.edges || []).map(e => Object.assign({}, e, {
+      weight: clampWeight(e.weight),
+      signals: normalizeSignals(e.signals),
+      source_signal_available: e.source_signal_available === true,
+      source: e.from,
+      target: e.to
     }));
-    // compute degree
+    state.insights = normalizeInsights(DATA.insights);
+
     const byId = {};
     state.nodes.forEach(n => { byId[n.id] = n; });
     state.links.forEach(l => {
       if (byId[l.source]) byId[l.source].degree++;
       if (byId[l.target]) byId[l.target].degree++;
     });
-    // communities
+
     const commMap = {};
     state.nodes.forEach(n => {
       const c = n.community == null ? "_none" : String(n.community);
@@ -144,7 +164,6 @@
     state.communities = commMap;
     state.byId = byId;
 
-    // community colors
     const palette = state.variantTokens.commPalette;
     const commKeys = Object.keys(commMap).filter(k => k !== "_none");
     commKeys.forEach((k, i) => {
@@ -156,9 +175,68 @@
       const c = n.community == null ? "_none" : String(n.community);
       n.commColor = commMap[c].color;
     });
+
+    state.searchIndex = state.nodes.map(n => ({
+      node: n,
+      haystack: `${(n.label || n.id || "").toLowerCase()}\n${(n.content || "").slice(0, 500).toLowerCase()}`
+    }));
   }
 
   // ---------- Node geometry ----------
+  function clampWeight(value) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return 0.5;
+    return Math.max(0, Math.min(1, numeric));
+  }
+
+  function normalizeSignals(signals) {
+    const safe = signals && typeof signals === "object" ? signals : {};
+    return {
+      co_citation: Number.isFinite(Number(safe.co_citation)) ? Number(safe.co_citation) : 0,
+      source_overlap: Number.isFinite(Number(safe.source_overlap)) ? Number(safe.source_overlap) : null,
+      type_affinity: Number.isFinite(Number(safe.type_affinity)) ? Number(safe.type_affinity) : 0.5
+    };
+  }
+
+  function normalizeInsights(insights) {
+    const safe = insights && typeof insights === "object" ? insights : {};
+    return {
+      surprising_connections: Array.isArray(safe.surprising_connections) ? safe.surprising_connections : [],
+      isolated_nodes: Array.isArray(safe.isolated_nodes) ? safe.isolated_nodes : [],
+      bridge_nodes: Array.isArray(safe.bridge_nodes) ? safe.bridge_nodes : [],
+      sparse_communities: Array.isArray(safe.sparse_communities) ? safe.sparse_communities : [],
+      meta: safe.meta && typeof safe.meta === "object" ? safe.meta : { degraded: false }
+    };
+  }
+
+  function edgeStrokeWidth(edge) {
+    return 0.6 + clampWeight(edge.weight) * 2.5;
+  }
+
+  function edgeOpacity(edge) {
+    return 0.2 + clampWeight(edge.weight) * 0.55;
+  }
+
+  function edgeRoughness(edge) {
+    return 2.2 - clampWeight(edge.weight) * 1.2;
+  }
+
+  function edgeHaloOpacity(edge) {
+    return clampWeight(edge.weight) >= 0.6 ? 0.14 + clampWeight(edge.weight) * 0.12 : 0;
+  }
+
+  function edgeStrengthSize(edge) {
+    return 6 + clampWeight(edge.weight) * 8;
+  }
+
+  function shouldShowEndpointDot(edge) {
+    return clampWeight(edge.weight) > 0.4;
+  }
+
+  function shouldShowBlur(edge) {
+    return clampWeight(edge.weight) >= 0.6 && edge._blurRank < 14;
+  }
+
   function nodeRadius(n) {
     const mode = state.tweaks.sizeMode;
     if (mode === "uniform") return 18;
@@ -167,7 +245,6 @@
       if (n.type === "source") return 14;
       return 18;
     }
-    // degree
     return 12 + Math.sqrt(n.degree) * 4;
   }
 
@@ -446,15 +523,34 @@
   }
 
   function renderEdges() {
-    const vis = visibleLinks();
+    const vis = visibleLinks()
+      .slice()
+      .sort((left, right) => clampWeight(right.weight) - clampWeight(left.weight));
+    vis.forEach((edge, index) => { edge._blurRank = index; });
     state.visibleLinks = vis;
-    const sel = edgeLayer.selectAll("path.edge")
+
+    const groups = edgeLayer.selectAll("g.edge-wrap")
       .data(vis, d => d.id);
-    sel.exit().remove();
-    sel.enter().append("path")
+    groups.exit().remove();
+
+    const enter = groups.enter().append("g").attr("class", "edge-wrap");
+    enter.append("path").attr("class", "edge-halo");
+    enter.append("path")
       .attr("class", "edge")
+      .attr("data-type", d => d.type || "EXTRACTED");
+
+    const merged = enter.merge(groups);
+    merged.select(".edge")
       .attr("data-type", d => d.type || "EXTRACTED")
-      .merge(sel);
+      .style("stroke-width", d => edgeStrokeWidth(d))
+      .style("opacity", d => edgeOpacity(d));
+
+    merged.select(".edge-halo")
+      .attr("data-type", d => d.type || "EXTRACTED")
+      .style("stroke", d => edgeBaseColor(d))
+      .style("stroke-width", d => edgeStrokeWidth(d) + 3.2)
+      .style("opacity", d => shouldShowBlur(d) ? edgeHaloOpacity(d) : 0)
+      .style("filter", d => shouldShowBlur(d) ? "blur(3px)" : "none");
   }
 
   function renderNodes() {
@@ -536,24 +632,32 @@
       .style("fill", d => nodeStrokeColor(d));
   }
 
+  function edgeBaseColor(edge) {
+    if ((edge.type || "EXTRACTED") === "INFERRED") return state.variantTokens.edgeInferred;
+    if ((edge.type || "EXTRACTED") === "AMBIGUOUS") return state.variantTokens.edgeAmbiguous;
+    return state.variantTokens.edgeExtracted;
+  }
+
   function nodeStrokeColor(n) {
     if (state.tweaks.sizeMode === "type" || state.tweaks.bubbleMode === "color") {
-      // prefer community color when bubble off
       return n.commColor;
     }
-    // type-based color by default
     if (n.type === "topic") return state.variantTokens.topic;
     if (n.type === "source") return state.variantTokens.source;
     return n.commColor;
   }
 
   function tick() {
-    // update edges (reuse existing elements)
-    edgeLayer.selectAll("path.edge")
-      .attr("d", d => {
-        const s = d.source, t = d.target;
-        if (s.x == null || t.x == null) return "";
-        return roughEdgePath(s.x, s.y, t.x, t.y, d.id ? d.id.charCodeAt(d.id.length - 1) : 0);
+    edgeLayer.selectAll("g.edge-wrap")
+      .each(function (d) {
+        const s = d.source;
+        const t = d.target;
+        if (s.x == null || t.x == null) return;
+
+        const wrap = d3.select(this);
+        const path = roughEdgePath(s.x, s.y, t.x, t.y, (d.id ? d.id.charCodeAt(d.id.length - 1) : 0) + edgeRoughness(d));
+        wrap.select(".edge").attr("d", path);
+        wrap.select(".edge-halo").attr("d", path);
       });
 
     nodeLayer.selectAll("g.node-group")
@@ -588,7 +692,7 @@
         }
       });
 
-    renderBlobs();
+    if (simulation.alpha() < 0.15) renderBlobs();
     renderMinimap();
   }
 
@@ -919,8 +1023,8 @@
     state.links.forEach(l => {
       const s = l.source.id || l.source;
       const t = l.target.id || l.target;
-      if (s === id) neighbors.push({ other: state.byId[t], direction: "→", type: l.type });
-      else if (t === id) neighbors.push({ other: state.byId[s], direction: "←", type: l.type });
+      if (s === id) neighbors.push({ other: state.byId[t], direction: "→", type: l.type, weight: l.weight });
+      else if (t === id) neighbors.push({ other: state.byId[s], direction: "←", type: l.type, weight: l.weight });
     });
     const nb = document.getElementById("nb-list");
     nb.innerHTML = "";
@@ -929,13 +1033,15 @@
     }
     neighbors.forEach(o => {
       if (!o.other) return;
+      const weight = clampWeight(o.weight);
       const el = document.createElement("div");
       el.className = "nb-item";
       el.innerHTML = `
         <span class="nb-item__arrow">${o.direction}</span>
         <span class="nb-item__type" style="background:${o.other.commColor || '#999'}"></span>
         <span class="nb-item__name">${escapeHtml(o.other.label || o.other.id)}</span>
-        <span class="nb-item__rel" data-rel="${o.type || 'EXTRACTED'}">${o.type || 'EXTRACTED'}</span>
+        <span class="nb-item__strength" style="width:${edgeStrengthSize(o)}px;height:${edgeStrengthSize(o)}px;background:${edgeBaseColor(o)}"></span>
+        <span class="nb-item__rel" data-rel="${o.type || 'EXTRACTED'}">${weight.toFixed(2)}</span>
       `;
       el.addEventListener("click", () => {
         selectNode(o.other.id, true);
@@ -966,6 +1072,99 @@
     t.setAttribute("data-show", "1");
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => t.setAttribute("data-show", "0"), 1800);
+  }
+
+  function focusNode(nodeId) {
+    const hit = state.byId[nodeId];
+    if (!hit) return;
+    selectNode(hit.id, true);
+    svg.transition().duration(450).call(zoomBehavior.translateTo, hit.x, hit.y);
+  }
+
+  function renderInsights() {
+    if (!insightsBody || !insightsMeta) return;
+
+    const sections = [
+      {
+        title: "惊人连接",
+        items: state.insights.surprising_connections,
+        render(item) {
+          return {
+            title: `${item.from} ↔ ${item.to}`,
+            meta: `跨社区强边 · 权重 ${clampWeight(item.weight).toFixed(2)}`,
+            onClick() { focusNode(item.from); }
+          };
+        }
+      },
+      {
+        title: "知识缺口",
+        items: state.insights.isolated_nodes,
+        render(item) {
+          return {
+            title: item.label || item.id,
+            meta: `孤立节点 · 度数 ${item.degree}`,
+            onClick() { focusNode(item.id); }
+          };
+        }
+      },
+      {
+        title: "桥节点",
+        items: state.insights.bridge_nodes,
+        render(item) {
+          return {
+            title: item.label || item.id,
+            meta: `连接 ${item.community_count} 个社区`,
+            onClick() { focusNode(item.id); }
+          };
+        }
+      },
+      {
+        title: "稀疏社区",
+        items: state.insights.sparse_communities,
+        render(item) {
+          return {
+            title: item.label || item.id,
+            meta: `密度 ${Number(item.density || 0).toFixed(2)} · ${item.node_count} 个节点`,
+            onClick() { focusNode(item.id); }
+          };
+        }
+      }
+    ];
+
+    const totalItems = sections.reduce((sum, section) => sum + section.items.length, 0);
+    const degraded = state.insights.meta && state.insights.meta.degraded === true;
+    insightsMeta.textContent = degraded ? `${totalItems} 项 · 已降级` : `${totalItems} 项`;
+    insightsBody.innerHTML = "";
+
+    sections.forEach(section => {
+      const wrap = document.createElement("section");
+      wrap.className = "insights-panel__section";
+      wrap.innerHTML = `<div class="insights-panel__section-title">${escapeHtml(section.title)}</div>`;
+
+      if (!section.items.length) {
+        const empty = document.createElement("div");
+        empty.className = "insights-panel__empty";
+        empty.textContent = "暂无。";
+        wrap.appendChild(empty);
+        insightsBody.appendChild(wrap);
+        return;
+      }
+
+      section.items.forEach(item => {
+        const view = section.render(item);
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "insight-item";
+        button.innerHTML = `
+          <span class="insight-item__title">${escapeHtml(view.title)}</span>
+          <span class="insight-item__meta">${escapeHtml(view.meta)}</span>
+        `;
+        button.addEventListener("click", view.onClick);
+        wrap.appendChild(button);
+      });
+
+      insightsBody.appendChild(wrap);
+    });
   }
 
   // ---------- Search ----------
@@ -1005,10 +1204,9 @@
     input.addEventListener("input", () => {
       const q = input.value.trim().toLowerCase();
       if (!q) { dd.setAttribute("data-open", "0"); return; }
-      results = state.nodes.filter(n =>
-        (n.label || n.id).toLowerCase().includes(q) ||
-        (n.content || "").toLowerCase().includes(q)
-      );
+      results = state.searchIndex
+        .filter(entry => entry.haystack.includes(q))
+        .map(entry => entry.node);
       activeIdx = 0;
       render();
     });
@@ -1292,6 +1490,7 @@
   setupSearch();
   setupTweaks();
   setupEditMode();
+  renderInsights();
   updateFooter();
 
   // Auto-select a node after stabilization for visual polish (comment out if not wanted)

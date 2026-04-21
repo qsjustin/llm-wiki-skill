@@ -498,6 +498,99 @@ html, body {
   display: inline-block;
 }
 
+/* insights panel */
+.insights-panel {
+  position: absolute;
+  left: 28px;
+  top: 20px;
+  width: 290px;
+  max-height: min(52vh, 420px);
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 252, 243, 0.92);
+  backdrop-filter: blur(4px);
+  border: 1.5px solid var(--paper-ink-faint);
+  border-radius: var(--radius);
+  box-shadow: 2px 3px 0 rgba(43, 38, 32, 0.06);
+  z-index: 5;
+  transform: rotate(-0.25deg);
+  overflow: hidden;
+}
+.insights-panel__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px 10px;
+  border-bottom: 1px dashed rgba(117, 100, 84, 0.35);
+  background: rgba(244, 236, 219, 0.86);
+}
+.insights-panel__title {
+  font-family: var(--font-hand);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--paper-ink);
+}
+.insights-panel__meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--paper-ink-dim);
+}
+.insights-panel__body {
+  padding: 12px 14px 14px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.insights-panel__section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.insights-panel__section-title {
+  font-family: var(--font-hand);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--paper-ink-dim);
+}
+.insights-panel__empty {
+  padding: 8px 2px;
+  color: var(--paper-ink-faint);
+  font-family: var(--font-hand);
+  line-height: 1.5;
+}
+.insight-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px dashed rgba(117, 100, 84, 0.35);
+  border-radius: 6px;
+  background: rgba(255, 248, 234, 0.65);
+  color: var(--paper-ink);
+  cursor: pointer;
+  text-align: left;
+  transition: background 120ms, border-color 120ms, transform 120ms;
+}
+.insight-item:hover {
+  background: var(--paper-warm);
+  border-color: rgba(117, 100, 84, 0.55);
+  transform: translateY(-1px);
+}
+.insight-item__title {
+  font-family: var(--font-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+.insight-item__meta {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--paper-ink-dim);
+  line-height: 1.45;
+}
+
 /* zoom controls */
 .zoom-ctrl {
   position: absolute;
@@ -846,6 +939,14 @@ html, body {
   flex-shrink: 0;
 }
 .nb-item__name { flex: 1; }
+.nb-item__strength {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(90, 110, 92, 0.35);
+  box-shadow: 0 0 0 1px rgba(43, 38, 32, 0.08);
+  flex-shrink: 0;
+}
 .nb-item__rel {
   font-family: var(--font-mono);
   font-size: 10px;
@@ -874,15 +975,20 @@ html, body {
   pointer-events: none;
 }
 
-.edge-group .edge {
+.edge-group .edge,
+.edge-group .edge-halo {
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
   transition: opacity 200ms, stroke-width 200ms;
 }
-.edge[data-type="EXTRACTED"] { stroke: var(--edge-extracted); stroke-width: 1.4; }
-.edge[data-type="INFERRED"]  { stroke: var(--edge-inferred);  stroke-width: 1.3; stroke-dasharray: 5 4; }
-.edge[data-type="AMBIGUOUS"] { stroke: var(--edge-ambiguous); stroke-width: 1.2; stroke-dasharray: 1.5 3.5; }
+.edge-group .edge-halo {
+  pointer-events: none;
+  mix-blend-mode: multiply;
+}
+.edge[data-type="EXTRACTED"] { stroke: var(--edge-extracted); }
+.edge[data-type="INFERRED"]  { stroke: var(--edge-inferred); stroke-dasharray: 5 4; }
+.edge[data-type="AMBIGUOUS"] { stroke: var(--edge-ambiguous); stroke-dasharray: 1.5 3.5; }
 .edge--dim { opacity: 0.12; }
 .edge--hi  { stroke-width: 2.4; }
 
@@ -1149,6 +1255,14 @@ body[data-variant="wash"] {
 
   <main class="canvas-wrap">
     <svg id="canvas" tabindex="0" role="img" aria-label="知识图谱"></svg>
+
+    <aside class="insights-panel" id="insights-panel" aria-label="图谱洞察">
+      <div class="insights-panel__head">
+        <div class="insights-panel__title">Insights</div>
+        <div class="insights-panel__meta" id="insights-meta">0 项</div>
+      </div>
+      <div class="insights-panel__body" id="insights-body"></div>
+    </aside>
 
     <div class="legend">
       <div class="legend__title">图例</div>
