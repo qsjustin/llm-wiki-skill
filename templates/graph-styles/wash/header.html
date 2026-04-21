@@ -120,6 +120,12 @@ html, body {
   filter: blur(1px);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .brand__mark { transition: none; }
+  .brand__mark:hover,
+  .brand__mark:focus-visible { transform: rotate(-0.6deg); }
+}
+
 /* ============================================================
    Layout
    ============================================================ */
@@ -162,6 +168,17 @@ html, body {
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  text-decoration: none;
+  transition: transform 200ms;
+}
+.brand__mark:hover,
+.brand__mark:focus-visible {
+  transform: rotate(-1.2deg) translateY(-1px);
+  outline: none;
+}
+.brand__mark:focus-visible {
+  box-shadow: 0 0 0 2px var(--paper-ink-dim);
+  border-radius: 4px;
 }
 .brand__mark::before {
   content: "";
@@ -171,6 +188,9 @@ html, body {
   border-radius: 50%;
   box-shadow: 1px 2px 0 rgba(0,0,0,0.12);
   transform: rotate(12deg);
+}
+.brand__mark:hover::before {
+  box-shadow: 2px 3px 0 rgba(0,0,0,0.2);
 }
 .brand__title {
   font-family: var(--font-text);
@@ -967,7 +987,9 @@ body[data-variant="wash"] {
 <div class="app" id="app">
 
   <header class="brand">
-    <div class="brand__mark">llm-wiki</div>
+    <a class="brand__mark" href="https://github.com/sdyckjq-lab/llm-wiki-skill"
+       target="_blank" rel="noopener"
+       data-tip="查看 llm-wiki 项目 · GitHub">llm-wiki</a>
     <div class="brand__title" id="wiki-title">__WIKI_TITLE__</div>
     <div class="brand__sub">
       <span id="n-nodes">—</span> 节点 · <span id="n-edges">—</span> 关联 · 更新 <b id="n-date">—</b>
