@@ -120,6 +120,12 @@ html, body {
   filter: blur(1px);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .brand__mark { transition: none; }
+  .brand__mark:hover,
+  .brand__mark:focus-visible { transform: rotate(-0.6deg); }
+}
+
 /* ============================================================
    Layout
    ============================================================ */
@@ -162,6 +168,17 @@ html, body {
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  text-decoration: none;
+  transition: transform 200ms;
+}
+.brand__mark:hover,
+.brand__mark:focus-visible {
+  transform: rotate(-1.2deg) translateY(-1px);
+  outline: none;
+}
+.brand__mark:focus-visible {
+  box-shadow: 0 0 0 2px var(--paper-ink-dim);
+  border-radius: 4px;
 }
 .brand__mark::before {
   content: "";
@@ -171,6 +188,9 @@ html, body {
   border-radius: 50%;
   box-shadow: 1px 2px 0 rgba(0,0,0,0.12);
   transform: rotate(12deg);
+}
+.brand__mark:hover::before {
+  box-shadow: 2px 3px 0 rgba(0,0,0,0.2);
 }
 .brand__title {
   font-family: var(--font-text);
@@ -344,6 +364,56 @@ html, body {
 .iconbtn:hover { border-color: var(--paper-ink); color: var(--paper-ink); background: rgba(255,252,243,0.6); }
 .iconbtn[data-on="1"] { border-color: var(--pen-rust); color: var(--pen-rust); background: rgba(255,252,243,0.9); }
 .iconbtn svg { width: 16px; height: 16px; }
+.iconbtn--labeled {
+  width: auto;
+  padding: 0 12px;
+  gap: 6px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  border-radius: 18px;
+}
+.iconbtn__text {
+  color: var(--paper-ink-dim);
+  line-height: 1;
+}
+.iconbtn--labeled:hover .iconbtn__text { color: var(--paper-ink); }
+[data-tip] { position: relative; }
+[data-tip]:hover::after,
+[data-tip]:focus-visible::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  max-width: min(240px, calc(100vw - 24px));
+  white-space: normal;
+  word-break: break-word;
+  padding: 5px 10px;
+  background: var(--paper-ink);
+  color: #fdf7e6;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  border-radius: 4px;
+  box-shadow: 1px 2px 0 rgba(43,38,32,0.15);
+  z-index: 40;
+  pointer-events: none;
+  animation: tip-in 140ms ease-out;
+}
+@media (max-width: 480px) {
+  [data-tip]:hover::after,
+  [data-tip]:focus-visible::after {
+    right: auto;
+    left: 0;
+    max-width: calc(100vw - 16px);
+  }
+}
+@keyframes tip-in {
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-tip]:hover::after,
+  [data-tip]:focus-visible::after { animation: none; }
+}
 
 /* ---------- Canvas ---------- */
 .canvas-wrap {
@@ -464,6 +534,12 @@ html, body {
   overflow: hidden;
   z-index: 5;
   transform: rotate(0.4deg);
+  transition: width 220ms, height 220ms;
+}
+.minimap[data-collapsed="1"] {
+  width: 88px;
+  height: 22px;
+  overflow: hidden;
 }
 .minimap__label {
   position: absolute;
@@ -476,7 +552,33 @@ html, body {
   border-radius: 3px;
   z-index: 2;
 }
+.minimap[data-collapsed="1"] .minimap__label {
+  top: 2px;
+  left: 6px;
+  background: transparent;
+}
+.minimap__toggle {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  width: 22px;
+  height: 20px;
+  background: transparent;
+  border: none;
+  color: var(--paper-ink-dim);
+  font-size: 14px;
+  cursor: pointer;
+  z-index: 3;
+  transition: transform 180ms;
+}
+.minimap[data-collapsed="1"] .minimap__toggle {
+  transform: rotate(180deg);
+  right: 2px;
+}
 #minimap-svg { width: 100%; height: 100%; cursor: pointer; }
+.minimap[data-collapsed="1"] #minimap-svg {
+  display: none;
+}
 .minimap__viewport {
   fill: rgba(182, 82, 57, 0.15);
   stroke: var(--pen-rust);
@@ -617,8 +719,9 @@ html, body {
 .drawer-close:hover { color: var(--paper-ink); border-color: var(--paper-ink); }
 
 .drawer-body {
-  flex: 1;
+  flex: 1 1 0;
   overflow-y: auto;
+  min-height: 0;
   padding: 20px 28px 40px 48px;
   font-family: var(--font-text);
   font-size: 15px;
@@ -683,9 +786,16 @@ html, body {
 
 /* neighbors list at the bottom of the drawer */
 .drawer-neighbors {
+  flex-shrink: 0;
+  max-height: 35vh;
+  overflow-y: auto;
   padding: 0 28px 24px 48px;
   border-top: 1px dashed var(--paper-ink-faint);
   margin-top: 8px;
+}
+.drawer-neighbors[data-collapsed="1"] {
+  max-height: 40px;
+  overflow: hidden;
 }
 .drawer-neighbors h4 {
   font-family: var(--font-hand);
@@ -693,6 +803,19 @@ html, body {
   color: var(--paper-ink-dim);
   margin: 16px 0 10px;
   font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.drawer-neighbors h4::after {
+  content: "⌃";
+  font-family: var(--font-hand);
+  transition: transform 180ms;
+}
+.drawer-neighbors[data-collapsed="1"] h4::after {
+  transform: rotate(180deg);
 }
 .nb-list {
   display: flex;
@@ -956,6 +1079,8 @@ body[data-variant="wash"] {
   .margin-line { display: none; }
   .brand, .tools, .footer { padding-left: 20px; }
   .minimap { display: none; }
+  .iconbtn--labeled { width: 34px; padding: 0; }
+  .iconbtn__text { display: none; }
 }
 </style>
 </head>
@@ -967,7 +1092,9 @@ body[data-variant="wash"] {
 <div class="app" id="app">
 
   <header class="brand">
-    <div class="brand__mark">llm-wiki</div>
+    <a class="brand__mark" href="https://github.com/sdyckjq-lab/llm-wiki-skill"
+       target="_blank" rel="noopener"
+       data-tip="查看 llm-wiki 项目 · GitHub">llm-wiki</a>
     <div class="brand__title" id="wiki-title">__WIKI_TITLE__</div>
     <div class="brand__sub">
       <span id="n-nodes">—</span> 节点 · <span id="n-edges">—</span> 关联 · 更新 <b id="n-date">—</b>
@@ -999,21 +1126,24 @@ body[data-variant="wash"] {
 
     <div class="tools__spacer"></div>
 
-    <button class="iconbtn" id="btn-refit" title="重新排布">
+    <button class="iconbtn iconbtn--labeled" id="btn-refit" aria-label="重新排布" data-tip="重新布置节点">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
         <path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1M5.6 18.4l2.1-2.1m8.6-8.6 2.1-2.1"/>
       </svg>
+      <span class="iconbtn__text">重排</span>
     </button>
-    <button class="iconbtn" id="btn-fit" title="适应画布">
+    <button class="iconbtn iconbtn--labeled" id="btn-fit" aria-label="适应画布" data-tip="适应画布 · 回到居中">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
         <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>
       </svg>
+      <span class="iconbtn__text">居中</span>
     </button>
-    <button class="iconbtn" id="btn-tweaks" title="视觉变体">
+    <button class="iconbtn iconbtn--labeled" id="btn-tweaks" aria-label="视觉设置" data-tip="视觉设置">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
         <circle cx="12" cy="12" r="3"/>
         <path d="M12 2v4M12 18v4M2 12h4M18 12h4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/>
       </svg>
+      <span class="iconbtn__text">设置</span>
     </button>
   </div>
 
@@ -1032,8 +1162,11 @@ body[data-variant="wash"] {
       <button id="zoom-out" title="缩小">−</button>
     </div>
 
-    <div class="minimap">
+    <div class="minimap" id="minimap" data-collapsed="0">
       <div class="minimap__label">小地图</div>
+      <button class="minimap__toggle" id="minimap-toggle"
+              aria-label="折叠小地图" aria-expanded="true"
+              data-tip="折叠/展开小地图">⌄</button>
       <svg id="minimap-svg"></svg>
     </div>
 
@@ -1079,8 +1212,8 @@ body[data-variant="wash"] {
 
       <div class="drawer-body" id="dr-body"></div>
 
-      <div class="drawer-neighbors" id="dr-neighbors">
-        <h4>相邻节点</h4>
+      <div class="drawer-neighbors" id="dr-neighbors" data-collapsed="0">
+        <h4 tabindex="0" role="button" aria-expanded="true">相邻节点</h4>
         <div class="nb-list" id="nb-list"></div>
       </div>
     </div>
