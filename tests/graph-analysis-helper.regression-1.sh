@@ -79,6 +79,58 @@ EOF
     rm -rf "$tmp_dir"
 }
 
+test_single_node_graph_louvain_returns_safely() {
+    local output
+    output="$(node - <<'NODE' "$HELPER"
+const helper = require(process.argv[2]);
+const result = helper.runLouvain(["Solo"], new Map());
+console.log(JSON.stringify(Object.fromEntries(result)));
+NODE
+)"
+    [ "$output" = '{"Solo":"Solo"}' ] || fail "Expected single-node Louvain to return solo assignment, got: $output"
+}
+
+test_parse_sources_yaml_multiline() {
+    local output
+    output="$(node - <<'NODE' "$HELPER"
+const helper = require(process.argv[2]);
+const fm = [
+  "title: Test",
+  "sources:",
+  "  - paper_a.pdf",
+  "  - paper_b.pdf",
+  "  - \"quoted.pdf\""
+].join("\n");
+const result = helper.parseSourcesFrontmatter(fm);
+console.log(JSON.stringify(result));
+NODE
+)"
+    local has_field parsed signal sources
+    has_field="$(printf '%s' "$output" | jq -r '.hasField')"
+    parsed="$(printf '%s' "$output" | jq -r '.parsed')"
+    signal="$(printf '%s' "$output" | jq -r '.signalAvailable')"
+    sources="$(printf '%s' "$output" | jq -r '.sources | join(",")')"
+    [ "$has_field" = "true" ] || fail "Expected hasField=true for YAML multiline, got: $has_field"
+    [ "$parsed" = "true" ] || fail "Expected parsed=true for YAML multiline, got: $parsed"
+    [ "$signal" = "true" ] || fail "Expected signalAvailable=true, got: $signal"
+    [ "$sources" = "paper_a.pdf,paper_b.pdf,quoted.pdf" ] || fail "Unexpected sources: $sources"
+}
+
+test_node_helper_bad_json_exits_with_error() {
+    local tmp_dir output
+    tmp_dir="$(mktemp -d)"
+
+    printf 'not json' > "$tmp_dir/bad.json"
+    printf '[]' > "$tmp_dir/edges.json"
+
+    if output="$(node "$HELPER" "$tmp_dir/bad.json" "$tmp_dir/edges.json" "$tmp_dir/out.json" 0 500 250 1000 2>&1)"; then
+        fail "graph-analysis.js should fail on invalid JSON input"
+    fi
+
+    assert_text_contains "$output" "Invalid JSON"
+    rm -rf "$tmp_dir"
+}
+
 test_helper_reports_sparse_and_bridge_insights() {
     local output
 
@@ -144,6 +196,9 @@ NODE
 
 main() {
     test_helper_computes_weights_and_source_omission
+    test_single_node_graph_louvain_returns_safely
+    test_parse_sources_yaml_multiline
+    test_node_helper_bad_json_exits_with_error
     test_helper_reports_sparse_and_bridge_insights
     echo "PASS: graph analysis helper regression coverage"
 }

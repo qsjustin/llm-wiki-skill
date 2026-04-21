@@ -1,3 +1,7 @@
+---
+sources: ["gpt-series-overview.pdf"]
+---
+
 # 微调技术
 
 本主题涵盖模型微调相关技术。

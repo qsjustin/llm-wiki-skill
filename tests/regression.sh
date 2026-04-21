@@ -1324,7 +1324,7 @@ test_graph_data_has_three_confidence_types() {
 }
 
 test_graph_data_community_clustering() {
-    local tmp_dir communities
+    local tmp_dir arch_nodes finetune_nodes paper_comm attention_comm
     tmp_dir="$(mktemp -d)"
     trap 'rm -rf "$tmp_dir"' RETURN
 
@@ -1333,23 +1333,22 @@ test_graph_data_community_clustering() {
         "$REPO_ROOT/$GRAPH_DATA_SAMPLE" \
         "$tmp_dir/graph-data.json" > /dev/null 2>&1
 
-    # Transformer/Attention/Encoder/Decoder 属于 arch 社区
-    local arch_nodes
     arch_nodes=$(jq -r '.nodes[] | select(.community == "arch") | .id' "$tmp_dir/graph-data.json" | sort | tr '\n' ' ')
-    assert_text_contains "$arch_nodes" "Attention"
     assert_text_contains "$arch_nodes" "Decoder"
     assert_text_contains "$arch_nodes" "Encoder"
     assert_text_contains "$arch_nodes" "Transformer"
+    assert_text_contains "$arch_nodes" "arch"
 
-    # GPT 属于 finetune 社区
-    local finetune_nodes
-    finetune_nodes=$(jq -r '.nodes[] | select(.community == "finetune") | .id' "$tmp_dir/graph-data.json")
+    finetune_nodes=$(jq -r '.nodes[] | select(.community == "finetune") | .id' "$tmp_dir/graph-data.json" | sort | tr '\n' ' ')
     assert_text_contains "$finetune_nodes" "GPT"
+    assert_text_contains "$finetune_nodes" "finetune"
 
-    # paper 没有社区（null）
-    local paper_comm
+    attention_comm=$(jq -r '.nodes[] | select(.community == "Attention") | .id' "$tmp_dir/graph-data.json" | sort | tr '\n' ' ')
+    assert_text_contains "$attention_comm" "Attention"
+    assert_text_contains "$attention_comm" "paper"
+
     paper_comm=$(jq -r '.nodes[] | select(.id == "paper") | .community' "$tmp_dir/graph-data.json")
-    [ "$paper_comm" = "null" ] || fail "Expected paper community to be null, got: $paper_comm"
+    [ "$paper_comm" = "Attention" ] || fail "Expected paper community to be Attention, got: $paper_comm"
 }
 
 test_graph_data_empty_wiki_has_zero_nodes_and_edges() {
@@ -1519,11 +1518,14 @@ test_graph_html_basic_assembly
 test_graph_html_escapes_script_tag_in_content
 test_graph_html_missing_data_exits_with_error
 test_graph_html_missing_template_exits_with_error
+bash "$REPO_ROOT/tests/graph-analysis-helper.regression-1.sh" || fail "graph-analysis-helper.regression-1.sh 测试失败"
+bash "$REPO_ROOT/tests/graph-build-failures.regression-1.sh" || fail "graph-build-failures.regression-1.sh 测试失败"
 bash "$REPO_ROOT/tests/graph-html-brand-link.regression-1.sh" || fail "graph-html-brand-link.regression-1.sh 测试失败"
 bash "$REPO_ROOT/tests/graph-html-long-label.regression-1.sh" || fail "graph-html-long-label.regression-1.sh 测试失败"
 bash "$REPO_ROOT/tests/graph-html-minimap.regression-1.sh" || fail "graph-html-minimap.regression-1.sh 测试失败"
 bash "$REPO_ROOT/tests/graph-html-toolbar.regression-1.sh" || fail "graph-html-toolbar.regression-1.sh 测试失败"
 bash "$REPO_ROOT/tests/graph-html-drawer-neighbors.regression-1.sh" || fail "graph-html-drawer-neighbors.regression-1.sh 测试失败"
+bash "$REPO_ROOT/tests/graph-html-insights.regression-1.sh" || fail "graph-html-insights.regression-1.sh 测试失败"
 bash "$REPO_ROOT/tests/graph-html-a11y.regression-1.sh" || fail "graph-html-a11y.regression-1.sh 测试失败"
 test_graph_data_dead_links_are_ignored
 test_graph_data_self_links_are_ignored
