@@ -1,6 +1,6 @@
 # TODOs
 
-## 学习驾驶舱
+## 学习驾驶舱（核心骨架）
 
 **Completed:** v3.1.0 (2026-04-23)
 
@@ -8,6 +8,31 @@
 2. **把 wash 首页改成学习入口优先** — DONE
 3. **接入运行时学习状态与右侧学习解释** — DONE
 4. **补齐学习驾驶舱回归测试** — DONE
+
+> 设计文档：`~/.gstack/projects/sdyckjq-lab-llm-wiki-skill/kangjiaqi-main-design-20260423-084646.md`
+> 实现 plan：`docs/plans/2026-04-23-learning-cockpit-implementation-plan.md`
+> 分支：`feat/learning-cockpit`（已合并前 4 项，尚未 push/PR）
+
+## 学习驾驶舱补全（A-C 已完成）
+
+**Completed:** v3.2.0 (2026-04-23)
+**分支：** `feat/learning-cockpit-left-nav`
+
+1. **左侧社区导航面板** — DONE
+2. **社区榜展示前 3 个社区** — DONE
+3. **点击社区触发左中右联动** — DONE
+
+4. **信息层级重排**
+   - 搜索/过滤/Insights/小地图保留但默认折叠
+   - 这些二级能力不再抢占首页学习叙事
+
+5. **推荐起点附带理由**
+   - 每个推荐起点附固定模板理由（如"社区内连接最多的入口节点"）
+
+6. **Design Validation**
+   - 找 3 个真实 wiki 样本，按"第一次打开的人只看 30 秒"标准演练
+   - 每个样本写 4 行：左侧第一社区 / 推荐起点 / 中间默认子图 / 右侧推荐理由
+   - 功能做完后、push 前执行
 
 ## After Multi-Platform Adaptation
 
