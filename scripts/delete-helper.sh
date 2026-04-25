@@ -29,6 +29,8 @@ scan_refs() {
     exit 1
   }
 
+  require_python_cmd
+
   {
     grep -rlF --include='*.md' -- "$needle" "$wiki_dir" 2>/dev/null || true
   } | "$PYTHON_CMD" -c '

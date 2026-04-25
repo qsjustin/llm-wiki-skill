@@ -66,6 +66,8 @@ EOF
 }
 
 relative_path() {
+  require_python_cmd
+
   "$PYTHON_CMD" - "$1" "$2" <<'PY'
 import os
 import sys
@@ -85,6 +87,8 @@ normalized_source_page() {
 
   case "$source_page" in
     /*)
+      require_python_cmd
+
       "$PYTHON_CMD" - "$wiki_root" "$source_page" <<'PY'
 import os
 import sys
@@ -110,6 +114,8 @@ PY
 }
 
 file_hash() {
+  require_python_cmd
+
   "$PYTHON_CMD" - "$1" "$2" <<'PY'
 import hashlib
 import pathlib
@@ -139,6 +145,8 @@ cache_check() {
     printf 'MISS\n'
     return 0
   fi
+
+  require_python_cmd
 
   relative_path_value="$(relative_path "$wiki_root" "$file_path")"
   current_hash="$(file_hash "$relative_path_value" "$file_path")"
@@ -245,6 +253,8 @@ cache_update() {
   cache_file="$(cache_file_path "$wiki_root")"
   ensure_cache_file "$cache_file"
 
+  require_python_cmd
+
   relative_path_value="$(relative_path "$wiki_root" "$file_path")"
   current_hash="$(file_hash "$relative_path_value" "$file_path")"
   normalized_source="$(normalized_source_page "$wiki_root" "$source_page")"
@@ -293,6 +303,8 @@ cache_invalidate() {
     printf 'INVALIDATED\n'
     return 0
   fi
+
+  require_python_cmd
 
   relative_path_value="$(relative_path "$wiki_root" "$file_path")"
 

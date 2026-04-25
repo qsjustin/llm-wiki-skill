@@ -92,6 +92,17 @@ make_stub() {
     chmod +x "$path"
 }
 
+make_path_without_python() {
+    local bin_dir="$1"
+    local cmd cmd_path
+
+    mkdir -p "$bin_dir"
+    for cmd in bash dirname pwd mkdir tr awk sed sort cut head tail find wc uname date printf grep cat rm cp chmod mktemp; do
+        cmd_path="$(PATH="/usr/bin:/bin:/usr/sbin:/sbin" command -v "$cmd" 2>/dev/null || true)"
+        [ -n "$cmd_path" ] && ln -s "$cmd_path" "$bin_dir/$cmd"
+    done
+}
+
 make_repo_copy_without_git() {
     local dest="$1"
 
@@ -207,6 +218,39 @@ test_install_dry_run_for_claude() {
     assert_text_contains "$output" "--with-optional-adapters"
     assert_text_not_contains "$output" "uv tool install"
     assert_text_not_contains "$output" "bun install"
+}
+
+test_install_help_does_not_require_python() {
+    local tmp_dir output
+    tmp_dir="$(mktemp -d)"
+    trap 'rm -rf "$tmp_dir"' RETURN
+
+    make_path_without_python "$tmp_dir/bin"
+
+    output="$(
+        PATH="$tmp_dir/bin" \
+        bash "$REPO_ROOT/install.sh" --help 2>&1
+    )" || fail "install.sh --help should not require Python"
+
+    assert_text_contains "$output" "用法："
+}
+
+test_install_dry_run_does_not_require_python() {
+    local tmp_dir output
+    tmp_dir="$(mktemp -d)"
+    trap 'rm -rf "$tmp_dir"' RETURN
+
+    mkdir -p "$tmp_dir/home/.codex/skills"
+    make_path_without_python "$tmp_dir/bin"
+
+    output="$(
+        HOME="$tmp_dir/home" \
+        PATH="$tmp_dir/bin" \
+        bash "$REPO_ROOT/install.sh" --platform codex --dry-run 2>&1
+    )" || fail "install.sh dry-run should not require Python"
+
+    assert_text_contains "$output" "install.ps1"
+    assert_text_contains "$output" "llm-wiki 已准备完成"
 }
 
 test_install_auto_refuses_ambiguous_platforms() {
@@ -506,6 +550,23 @@ test_hook_session_start_returns_empty_json_without_wiki() {
     )" || fail "hook-session-start.sh should succeed without wiki"
 
     [ "$output" = "{}" ] || fail "Expected hook-session-start.sh to return {} without wiki"
+}
+
+test_hook_session_start_without_wiki_does_not_require_python() {
+    local tmp_dir output
+    tmp_dir="$(mktemp -d)"
+    trap 'rm -rf "$tmp_dir"' RETURN
+
+    mkdir -p "$tmp_dir/home"
+    make_path_without_python "$tmp_dir/bin"
+
+    output="$(
+        HOME="$tmp_dir/home" \
+        PATH="$tmp_dir/bin" \
+        bash "$REPO_ROOT/scripts/hook-session-start.sh" 2>&1
+    )" || fail "hook-session-start.sh should return {} without Python when no wiki exists"
+
+    [ "$output" = "{}" ] || fail "Expected hook-session-start.sh to return {} without wiki, got: $output"
 }
 
 test_install_registers_and_uninstalls_session_start_hook() {
@@ -1294,6 +1355,8 @@ test_skill_md_step12_does_not_call_cache_update() {
 test_setup_runs_on_bash_3_2
 test_install_with_optional_adapters_bootstraps_dependencies
 test_install_dry_run_for_claude
+test_install_help_does_not_require_python
+test_install_dry_run_does_not_require_python
 test_install_auto_refuses_ambiguous_platforms
 test_upgrade_auto_refuses_ambiguous_installed_platforms
 test_upgrade_uses_explicit_target_dir
@@ -1314,6 +1377,7 @@ test_delete_helper_scans_reference_files
 test_skill_md_phase3_query_mentions_persistence_and_duplicate_handling
 test_hook_session_start_outputs_context_when_wiki_exists
 test_hook_session_start_returns_empty_json_without_wiki
+test_hook_session_start_without_wiki_does_not_require_python
 test_install_registers_and_uninstalls_session_start_hook
 test_platform_entries_mention_hook_and_wiki_context
 test_root_entries_explain_core_only_optional_and_target_dir

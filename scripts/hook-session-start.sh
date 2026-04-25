@@ -22,6 +22,8 @@ if [ -z "$WIKI_PATH" ] || [ ! -f "$WIKI_PATH/.wiki-schema.md" ]; then
   exit 0
 fi
 
+require_python_cmd
+
 "$PYTHON_CMD" - "$WIKI_PATH" <<'PY'
 import json
 import os
