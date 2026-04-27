@@ -125,7 +125,7 @@ test_graph_html_oriental_visual_contract() {
     html="$output_dir/knowledge-graph.html"
 
     assert_file_contains "$html" "国风知识库·数字山水图"
-    assert_file_contains "$html" "class=\"brand__github\""
+    assert_file_contains "$html" "brand__github"
     assert_file_contains "$html" "直接提取"
     assert_file_contains "$html" "推断关联"
     assert_file_contains "$html" "存在歧义"

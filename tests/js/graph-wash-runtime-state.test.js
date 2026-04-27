@@ -1,6 +1,12 @@
 const { describe, it } = require("node:test");
 const assert = require("node:assert/strict");
-const { resolveVisibleSnapshot } = require("../../templates/graph-styles/wash/graph-wash-helpers");
+const {
+  resolveVisibleSnapshot,
+  buildAtlasModel,
+  deriveAtlasLayout,
+  resolveAtlasVisibleSnapshot,
+  getAtlasDensityMode
+} = require("../../templates/graph-styles/wash/graph-wash-helpers");
 
 describe("resolveVisibleSnapshot", () => {
   const nodes = [
@@ -80,5 +86,65 @@ describe("resolveVisibleSnapshot", () => {
     assert.deepEqual(snapshot.nodes, []);
     assert.deepEqual(snapshot.links, []);
     assert.deepEqual(snapshot.searchIndex, []);
+  });
+});
+
+describe("atlas state contract", () => {
+  const rawGraph = {
+    meta: { wiki_title: "测试知识库", build_date: "2026-04-27" },
+    nodes: [
+      { id: "a", label: "知识编译", type: "topic", community: "method", confidence: "EXTRACTED", content: "# 知识编译\n\n整理一次，持续维护。" },
+      { id: "b", label: "素材消化", type: "topic", community: "method", confidence: "INFERRED", source_path: "wiki/topics/b.md" },
+      { id: "c", label: "网页文章", type: "source", community: "source", confidence: "AMBIGUOUS" }
+    ],
+    edges: [
+      { id: "ab", from: "a", to: "b", type: "EXTRACTED", weight: 0.9 },
+      { id: "ac", from: "a", to: "c", type: "INFERRED", weight: 0.6 }
+    ],
+    learning: {
+      entry: { recommended_start_node_id: "a" },
+      communities: [
+        { id: "method", label: "方法论", node_count: 2, is_primary: true, recommended_start_node_id: "a" },
+        { id: "source", label: "素材来源", node_count: 1, recommended_start_node_id: "c" }
+      ]
+    }
+  };
+
+  it("normalizes raw graph into one atlas model", () => {
+    const model = buildAtlasModel(rawGraph);
+
+    assert.equal(model.meta.wiki_title, "测试知识库");
+    assert.equal(model.nodes.length, 3);
+    assert.equal(model.edges.length, 2);
+    assert.equal(model.byId.a.degree, 2);
+    assert.equal(model.byId.a.summary, "整理一次，持续维护。");
+    assert.deepEqual(model.communities.map((community) => community.label), ["方法论", "素材来源"]);
+    assert.equal(model.starts[0].node.id, "a");
+  });
+
+  it("uses one visible snapshot for filters, search, density, and starts", () => {
+    const model = buildAtlasModel(rawGraph);
+    const layout = deriveAtlasLayout(model);
+    const snapshot = resolveAtlasVisibleSnapshot(model, layout, {
+      activeCommunityId: "method",
+      focusMode: "all",
+      query: "素材",
+      selectedNodeId: "a",
+      filters: { EXTRACTED: true, INFERRED: true }
+    });
+
+    assert.deepEqual(snapshot.node_ids, ["b"]);
+    assert.deepEqual(snapshot.nodes.map((node) => node.id), ["b"]);
+    assert.deepEqual(snapshot.edges, []);
+    assert.equal(snapshot.densityMode, "card");
+    assert.equal(snapshot.starts[0].node.id, "a");
+    assert.equal(snapshot.counts.total_nodes, 3);
+  });
+
+  it("selects density mode by visible node budget", () => {
+    assert.equal(getAtlasDensityMode(50), "card");
+    assert.equal(getAtlasDensityMode(120), "compact-card");
+    assert.equal(getAtlasDensityMode(300), "point-plus-focus");
+    assert.equal(getAtlasDensityMode(800), "overview");
   });
 });

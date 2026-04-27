@@ -61,6 +61,13 @@ describe("graph-wash bootstrap", () => {
           toggleQueueFavorite: (queue) => queue,
           appendQueueNote: (queue) => queue,
           summarizeQueue: () => ({ favorite_count: 0, note_count: 0, recent_items: [] }),
+          buildAtlasModel: () => ({ meta: {}, nodes: [], edges: [] }),
+          deriveAtlasLayout: () => ({ nodePositions: {}, bounds: { minX: 0, minY: 0, maxX: 0, maxY: 0 } }),
+          resolveAtlasVisibleSnapshot: () => ({ nodes: [], edges: [], nodeIds: new Set(), labelNodeIds: {} }),
+          atlasConfidenceLabel: (value) => value,
+          atlasTypeLabel: (value) => value,
+          atlasNodeKind: (value) => value,
+          stripAtlasMarkdown: (value) => value,
           defaultLearning: () => ({ version: 1, entry: { recommended_start_node_id: null, recommended_start_reason: null, default_mode: "global" }, views: { path: { enabled: false, start_node_id: null, node_ids: [], degraded: true }, community: { enabled: false, community_id: null, label: null, node_ids: [], is_weak: false, degraded: true }, global: { enabled: true, node_ids: [], degraded: false } }, communities: [], degraded: { path_to_community: true, community_to_global: true } }),
           normalizeLearning: () => ({ version: 1, entry: { recommended_start_node_id: null, recommended_start_reason: null, default_mode: "global" }, views: { path: { enabled: false, start_node_id: null, node_ids: [], degraded: true }, community: { enabled: false, community_id: null, label: null, node_ids: [], is_weak: false, degraded: true }, global: { enabled: true, node_ids: [], degraded: false } }, communities: [], degraded: { path_to_community: true, community_to_global: true } }),
           resolveInitialMode: () => "global",
@@ -76,6 +83,9 @@ describe("graph-wash bootstrap", () => {
         getElementById: (id) => {
           if (id === "graph-data") {
             return { textContent: '{"nodes":[],"edges":[],"insights":{}}' };
+          }
+          if (id === "atlas" || id === "node-layer" || id === "edge-layer") {
+            return {};
           }
           return null;
         }

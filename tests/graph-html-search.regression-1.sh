@@ -39,8 +39,10 @@ test_graph_html_has_search_ui() {
     build_graph_html_fixture "$tmp_dir"
     html="$tmp_dir/wiki/knowledge-graph.html"
 
-    assert_file_contains "$html" "search__input"
-    assert_file_contains "$html" "search-dropdown"
+    assert_file_contains "$html" 'class="search-box"'
+    assert_file_contains "$html" 'id="search"'
+    assert_file_contains "$html" "搜索节点、来源或主题"
+    assert_file_contains "$html" 'id="no-results"'
 
     rm -rf "$tmp_dir"
 }
@@ -54,6 +56,8 @@ test_graph_html_has_search_js() {
 
     assert_file_contains "$output_dir/graph-wash.js" "setupSearch"
     assert_file_contains "$output_dir/graph-wash.js" 'getElementById("search")'
+    assert_file_contains "$output_dir/graph-wash.js" "state.ui.query"
+    assert_file_contains "$output_dir/graph-wash.js" "renderAtlasView()"
 
     rm -rf "$tmp_dir"
 }

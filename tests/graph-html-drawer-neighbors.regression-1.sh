@@ -41,11 +41,11 @@ test_graph_html_has_bounded_neighbor_region() {
 
     assert_file_contains "$html" '.drawer-body {'
     assert_file_contains "$html" 'min-height: 0;'
-    assert_file_contains "$html" '.drawer-neighbors {'
-    assert_file_contains "$html" 'max-height: 35vh;'
-    assert_file_contains "$html" '.nb-list {'
-    assert_file_contains "$html" 'max-height: calc(35vh - 62px);'
-    assert_file_contains "$html" 'id="dr-neighbors"'
+    assert_file_contains "$html" '.neighbor-section[open] .neighbor-list {'
+    assert_file_contains "$html" 'max-height: 168px;'
+    assert_file_contains "$html" 'overflow-y: auto;'
+    assert_file_contains "$html" 'id="neighbor-details"'
+    assert_file_contains "$html" 'id="neighbor-list"'
     assert_file_contains "$html" 'data-collapsed="1"'
 
     rm -rf "$tmp_dir"
@@ -103,6 +103,7 @@ context.applyNeighborsCollapsed(true);
 context.toggleNeighbors();
 
 context.drawerNeighbors = makeEl({ 'data-collapsed': '0' });
+context.drawerNeighbors.open = true;
 context.drawerNeighborsHeading = makeEl({ 'aria-expanded': 'true' });
 context.applyNeighborsCollapsed(true);
 if (context.drawerNeighbors.attrs['data-collapsed'] !== '1') throw new Error('neighbors collapsed state not updated');

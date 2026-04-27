@@ -90,10 +90,13 @@ NODE
 test_graph_runtime_has_density_rules() {
     assert_file_contains "$REPO_ROOT/templates/graph-styles/wash/graph-wash.js" "const DENSITY_SMALL_LIMIT = 80;"
     assert_file_contains "$REPO_ROOT/templates/graph-styles/wash/graph-wash.js" "const DENSITY_MEDIUM_LIMIT = 200;"
+    assert_file_contains "$REPO_ROOT/templates/graph-styles/wash/graph-wash.js" "const DENSITY_LARGE_LIMIT = 500;"
     assert_file_contains "$REPO_ROOT/templates/graph-styles/wash/graph-wash.js" "function currentDensityMode()"
-    assert_file_contains "$REPO_ROOT/templates/graph-styles/wash/graph-wash.js" "function nodeCollisionRadius(node)"
-    assert_file_contains "$REPO_ROOT/templates/graph-styles/wash/graph-wash.js" "function nodeBoundsRadius(node)"
-    assert_file_contains "$REPO_ROOT/templates/graph-styles/wash/graph-wash.js" "const idx = state.visible.ready ? state.visible.searchIndex : state.searchIndex;"
+    assert_file_contains "$REPO_ROOT/templates/graph-styles/wash/graph-wash.js" "function nodeDisplayMode(node)"
+    assert_file_contains "$REPO_ROOT/templates/graph-styles/wash/graph-wash.js" "dataset.densityMode"
+    assert_file_contains "$REPO_ROOT/templates/graph-styles/wash/graph-wash-helpers.js" "function getAtlasDensityMode(count)"
+    assert_file_contains "$REPO_ROOT/templates/graph-styles/wash/graph-wash-helpers.js" "function atlasLabelBudget(mode, count)"
+    assert_file_contains "$REPO_ROOT/templates/graph-styles/wash/graph-wash-helpers.js" "function atlasEdgeBudget(mode, count)"
 }
 
 test_graph_html_builds_large_density_fixture() {
@@ -109,7 +112,8 @@ test_graph_html_builds_large_density_fixture() {
     html="$output_dir/knowledge-graph.html"
     assert_file_contains "$html" "密度测试知识库"
     assert_file_contains "$html" "Density Node 199"
-    assert_file_contains "$output_dir/graph-wash.js" "data-density-mode"
+    assert_file_contains "$output_dir/graph-wash.js" "point-plus-focus"
+    assert_file_contains "$output_dir/graph-wash.js" "overview"
 
     rm -rf "$tmp_dir"
 }
@@ -117,6 +121,7 @@ test_graph_html_builds_large_density_fixture() {
 main() {
     test_graph_runtime_has_density_rules
     test_graph_html_builds_large_density_fixture
+    [ -f "$REPO_ROOT/tests/fixtures/graph-interactive-dense/wiki/graph-data.json" ] || fail "dense fixture should exist"
     echo "PASS: graph HTML density regression coverage"
 }
 

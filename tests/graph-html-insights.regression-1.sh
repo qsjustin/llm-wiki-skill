@@ -1,5 +1,5 @@
 #!/bin/bash
-# Regression: wash graph HTML should expose insights panel wiring and weighted neighbor cues
+# Regression: oriental atlas should expose footer insights and weighted relationship cues
 
 set -euo pipefail
 
@@ -31,19 +31,19 @@ build_graph_html_fixture() {
         || fail "build-graph-html.sh should succeed on basic fixture"
 }
 
-test_graph_html_has_insights_panel_shell() {
+test_graph_html_has_footer_insight_shell() {
     local tmp_dir html js
     tmp_dir="$(mktemp -d)"
     build_graph_html_fixture "$tmp_dir"
     html="$tmp_dir/wiki/knowledge-graph.html"
     js="$tmp_dir/wiki/graph-wash.js"
 
-    assert_file_contains "$html" 'id="insights-panel"'
-    assert_file_contains "$html" 'id="insights-body"'
-    assert_file_contains "$html" 'id="panel-title"'
+    assert_file_contains "$html" 'class="insight"'
+    assert_file_contains "$html" 'id="insight-title"'
+    assert_file_contains "$html" 'id="insight-copy"'
     assert_file_contains "$js" 'renderInsights()'
     assert_file_contains "$js" 'focusNode(nodeId, openDrawer)'
-    assert_file_contains "$js" 'insight-item'
+    assert_file_contains "$js" 'state.atlasModel.insights'
 
     rm -rf "$tmp_dir"
 }
@@ -56,14 +56,15 @@ test_graph_html_has_weighted_edge_and_neighbor_hooks() {
 
     assert_file_contains "$js" 'edgeStrokeWidth(edge)'
     assert_file_contains "$js" 'edgeOpacity(edge)'
-    assert_file_contains "$js" 'nb-item__strength'
-    assert_file_contains "$js" 'clampWeight(o.weight)'
+    assert_file_contains "$js" 'edgeStrengthSize(edge)'
+    assert_file_contains "$js" 'clampWeight(edge && edge.weight)'
+    assert_file_contains "$js" 'atlasConfidenceLabel(entry.edge.type)'
 
     rm -rf "$tmp_dir"
 }
 
 main() {
-    test_graph_html_has_insights_panel_shell
+    test_graph_html_has_footer_insight_shell
     test_graph_html_has_weighted_edge_and_neighbor_hooks
     echo "PASS: graph HTML insights regression coverage"
 }

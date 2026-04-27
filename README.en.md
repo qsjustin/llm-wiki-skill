@@ -24,7 +24,7 @@ Turn scattered information into a growing, interconnected knowledge base
 <img src="docs/assets/graph-demo.gif" width="100%" alt="Knowledge Graph Demo">
 </div>
 
-Oriental editorial × digital landscape interactive knowledge graph — double-click the HTML file to explore in your browser. Search, filter, adaptive node density, summaries, full markdown content, and community clustering — all offline, no server needed.
+Oriental editorial × digital landscape interactive knowledge graph — double-click the HTML file to explore in your browser. Search, filters, adaptive node density, summaries, full markdown content, community clustering, and recommended starts all run offline.
 
 ---
 
@@ -59,8 +59,8 @@ The key difference: knowledge is **compiled once, maintained continuously** — 
 
 | | Feature | Description |
 |---|---|---|
-| 🗺️ | **Digital Landscape Graph** | Self-contained HTML with adaptive node density, summaries, full content, search, filters, community clustering, and a learning cockpit |
-| 🎓 | **Learning Cockpit** | Left-side communities, focus filters, scoped search, a local learning queue, and one auxiliary recommended start per context |
+| 🗺️ | **Digital Landscape Graph** | Self-contained HTML with a three-column oriental editorial layout, landscape canvas, persistent detail panel, and left-side literature index |
+| 🎓 | **Local Reading Flow** | Left-side communities, focus filters, scoped search, a local queue, and recommended starts stay connected to the visible graph |
 | 📦 | **Zero-config Init** | One sentence to create a full knowledge base with directory structure and templates |
 | 🔗 | **Structured Wiki** | Auto-generates entity pages, topic pages, source summaries with `[[bidirectional links]]` |
 | 🏷️ | **Confidence Annotation** | EXTRACTED / INFERRED / AMBIGUOUS / UNVERIFIED — see at a glance what needs verification |
