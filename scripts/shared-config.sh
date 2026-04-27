@@ -52,3 +52,32 @@ require_python_cmd() {
 # Windows 中文环境下 Python 无 TTY 时 sys.stdout.encoding 默认 gbk (cp936)，
 # 会导致 Agent 通过 subprocess 读取的 JSON / 输出出现乱码 (issue #16)
 export PYTHONIOENCODING="${PYTHONIOENCODING:-utf-8}"
+
+# 输出指定工具的跨平台安装提示，缩进 2 空格便于嵌套在 ERROR 消息下；
+# 输出走 stderr，与 ERROR 消息保持同一通道。
+print_install_hint() {
+  local tool="$1"
+  case "$tool" in
+    jq)
+      echo "  macOS:        brew install jq" >&2
+      echo "  Linux/WSL:    sudo apt-get install jq   (Debian/Ubuntu)" >&2
+      echo "                sudo dnf install jq       (RHEL/Fedora)" >&2
+      echo "  Windows:      winget install jqlang.jq  (or choco install jq)" >&2
+      ;;
+    node)
+      echo "  macOS:        brew install node" >&2
+      echo "  Linux/WSL:    sudo apt-get install nodejs npm" >&2
+      echo "  Windows:      winget install OpenJS.NodeJS  (or choco install nodejs)" >&2
+      ;;
+    uv)
+      echo "  macOS/Linux:  curl -LsSf https://astral.sh/uv/install.sh | sh    (official)" >&2
+      echo "                brew install uv                                    (alternative)" >&2
+      echo "  Windows:      powershell -c \"irm https://astral.sh/uv/install.ps1 | iex\"   (official)" >&2
+      echo "                winget install --id=astral-sh.uv -e                (alternative)" >&2
+      ;;
+    *)
+      echo "  unknown tool: $tool" >&2
+      return 1
+      ;;
+  esac
+}

@@ -3,13 +3,21 @@
 # 用法：bash validate-step1.sh <json_file>
 # 返回：0 = 格式正确，1 = 格式有问题（触发回退）
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/shared-config.sh"
+
 JSON_FILE="$1"
 
 # 参数检查
 [ -z "$1" ] && { echo "ERROR: usage: validate-step1.sh <json_file>"; exit 1; }
 
 # 检查 jq 是否可用（必需依赖）
-command -v jq >/dev/null 2>&1 || { echo "ERROR: jq not found. Run: brew install jq"; exit 1; }
+command -v jq >/dev/null 2>&1 || {
+  echo "ERROR: jq is not installed. Install it via:" >&2
+  print_install_hint jq
+  exit 1
+}
 
 # 检查文件是否存在
 [ -f "$JSON_FILE" ] || { echo "ERROR: file not found: $JSON_FILE"; exit 1; }

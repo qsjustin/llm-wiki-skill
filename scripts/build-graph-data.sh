@@ -13,10 +13,14 @@
 set -eu
 shopt -s nullglob
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/shared-config.sh"
+
 WIKI_ROOT="${1:-.}"
 DEFAULT_OUTPUT="$WIKI_ROOT/wiki/graph-data.json"
 OUTPUT="${2:-$DEFAULT_OUTPUT}"
-SKILL_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+SKILL_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 HELPER="$SKILL_DIR/scripts/graph-analysis.js"
 MAX_CONTENT_BYTES=$((2 * 1024 * 1024))
 MAX_CONTENT_LINES=500
@@ -24,12 +28,14 @@ MAX_INSIGHT_NODES=250
 MAX_INSIGHT_EDGES=1000
 
 command -v jq >/dev/null 2>&1 || {
-  echo "ERROR: jq 未安装。运行 brew install jq" >&2
+  echo "ERROR: jq is not installed. Install it via:" >&2
+  print_install_hint jq
   exit 1
 }
 
 command -v node >/dev/null 2>&1 || {
-  echo "ERROR: node 未安装。图谱 2.0 构建需要 node 运行时。运行 brew install node" >&2
+  echo "ERROR: node is not installed. Install it via:" >&2
+  print_install_hint node
   exit 1
 }
 

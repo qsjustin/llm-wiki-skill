@@ -34,7 +34,7 @@ test_graph_data_exits_without_node() {
     fi
 
     assert_text_contains "$output" "node"
-    assert_text_contains "$output" "图谱 2.0 构建需要 node"
+    assert_text_contains "$output" "Install it via"
 
     rm -rf "$tmp_dir"
 }
