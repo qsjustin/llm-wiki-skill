@@ -64,6 +64,7 @@ describe("graph-wash bootstrap", () => {
           buildAtlasModel: () => ({ meta: {}, nodes: [], edges: [] }),
           deriveAtlasLayout: () => ({ nodePositions: {}, bounds: { minX: 0, minY: 0, maxX: 0, maxY: 0 } }),
           resolveAtlasVisibleSnapshot: () => ({ nodes: [], edges: [], nodeIds: new Set(), labelNodeIds: {} }),
+          resolveAtlasSelectedNodeId: () => null,
           atlasConfidenceLabel: (value) => value,
           atlasTypeLabel: (value) => value,
           atlasNodeKind: (value) => value,

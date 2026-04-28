@@ -5,6 +5,7 @@ const {
   buildAtlasModel,
   deriveAtlasLayout,
   resolveAtlasVisibleSnapshot,
+  resolveAtlasSelectedNodeId,
   getAtlasDensityMode
 } = require("../../templates/graph-styles/wash/graph-wash-helpers");
 
@@ -122,6 +123,26 @@ describe("atlas state contract", () => {
     assert.equal(model.starts[0].node.id, "a");
   });
 
+  it("treats null atlas coordinates as missing layout input", () => {
+    const model = buildAtlasModel({
+      nodes: [
+        { id: "nullish", label: "Nullish", x: null, y: null },
+        { id: "origin", label: "Origin", x: 0, y: 0 }
+      ],
+      edges: []
+    });
+    deriveAtlasLayout(model);
+
+    assert.notDeepEqual(
+      { x: model.byId.nullish.x, y: model.byId.nullish.y },
+      { x: 5, y: 8 }
+    );
+    assert.deepEqual(
+      { x: model.byId.origin.x, y: model.byId.origin.y },
+      { x: 5, y: 8 }
+    );
+  });
+
   it("uses one visible snapshot for filters, search, density, and starts", () => {
     const model = buildAtlasModel(rawGraph);
     const layout = deriveAtlasLayout(model);
@@ -139,6 +160,29 @@ describe("atlas state contract", () => {
     assert.equal(snapshot.densityMode, "card");
     assert.equal(snapshot.starts[0].node.id, "a");
     assert.equal(snapshot.counts.total_nodes, 3);
+  });
+
+  it("moves selection into the current visible atlas range", () => {
+    const model = buildAtlasModel(rawGraph);
+    const layout = deriveAtlasLayout(model);
+    const methodSnapshot = resolveAtlasVisibleSnapshot(model, layout, {
+      activeCommunityId: "source",
+      focusMode: "all",
+      query: "",
+      selectedNodeId: "a",
+      filters: { EXTRACTED: true, INFERRED: true, AMBIGUOUS: true, UNVERIFIED: true }
+    });
+    const emptySnapshot = resolveAtlasVisibleSnapshot(model, layout, {
+      activeCommunityId: "source",
+      focusMode: "all",
+      query: "没有结果",
+      selectedNodeId: "c",
+      filters: { EXTRACTED: true, INFERRED: true, AMBIGUOUS: true, UNVERIFIED: true }
+    });
+
+    assert.equal(resolveAtlasSelectedNodeId(model, methodSnapshot, "a"), "c");
+    assert.equal(resolveAtlasSelectedNodeId(model, methodSnapshot, "c"), "c");
+    assert.equal(resolveAtlasSelectedNodeId(model, emptySnapshot, "c"), null);
   });
 
   it("selects density mode by visible node budget", () => {

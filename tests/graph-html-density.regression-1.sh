@@ -118,9 +118,66 @@ test_graph_html_builds_large_density_fixture() {
     rm -rf "$tmp_dir"
 }
 
+test_graph_density_thresholds_and_budgets() {
+    node - <<'NODE' "$REPO_ROOT" || fail "density thresholds and budgets should hold"
+const assert = require("node:assert/strict");
+const path = require("node:path");
+const repoRoot = process.argv[2];
+const {
+  buildAtlasModel,
+  deriveAtlasLayout,
+  resolveAtlasVisibleSnapshot
+} = require(path.join(repoRoot, "templates/graph-styles/wash/graph-wash-helpers.js"));
+
+function makeGraph(count, edgeCount) {
+  const nodes = Array.from({ length: count }, (_, index) => ({
+    id: `node-${index}`,
+    label: `Density Node ${index}`,
+    type: index % 8 === 0 ? "source" : index % 3 === 0 ? "topic" : "entity",
+    community: String(index % 6),
+    confidence: "EXTRACTED",
+    content: `# Density Node ${index}\n\n节点 ${index}。`
+  }));
+  const edges = Array.from({ length: edgeCount }, (_, index) => ({
+    id: `edge-${index}`,
+    from: `node-${index % count}`,
+    to: `node-${(index * 7 + 1) % count}`,
+    type: index % 5 === 0 ? "INFERRED" : "EXTRACTED",
+    weight: index % 9 === 0 ? 0.4 : 0.9
+  })).filter((edge) => edge.from !== edge.to);
+  return { meta: { wiki_title: "密度预算测试" }, nodes, edges };
+}
+
+function snapshotFor(count, edgeCount, selectedNodeId) {
+  const model = buildAtlasModel(makeGraph(count, edgeCount));
+  const layout = deriveAtlasLayout(model);
+  return resolveAtlasVisibleSnapshot(model, layout, {
+    activeCommunityId: "all",
+    focusMode: "all",
+    query: "",
+    selectedNodeId,
+    filters: { EXTRACTED: true, INFERRED: true, AMBIGUOUS: true, UNVERIFIED: true }
+  });
+}
+
+const pointSnapshot = snapshotFor(201, 900, "node-200");
+assert.equal(pointSnapshot.densityMode, "point-plus-focus");
+assert.ok(Object.keys(pointSnapshot.labelNodeIds).length <= 61, "201-node mode should cap labels while allowing the selected node");
+assert.ok(pointSnapshot.labelNodeIds["node-200"], "selected node should stay readable in point mode");
+assert.ok(pointSnapshot.edges.length <= 800, "point mode should cap edges at 800");
+
+const overviewSnapshot = snapshotFor(501, 1500, "node-500");
+assert.equal(overviewSnapshot.densityMode, "overview");
+assert.ok(Object.keys(overviewSnapshot.labelNodeIds).length <= 41, "501-node mode should cap labels while allowing the selected node");
+assert.ok(overviewSnapshot.labelNodeIds["node-500"], "selected node should stay readable in overview mode");
+assert.ok(overviewSnapshot.edges.length <= 1000, "overview mode should cap edges at 1000");
+NODE
+}
+
 main() {
     test_graph_runtime_has_density_rules
     test_graph_html_builds_large_density_fixture
+    test_graph_density_thresholds_and_budgets
     [ -f "$REPO_ROOT/tests/fixtures/graph-interactive-dense/wiki/graph-data.json" ] || fail "dense fixture should exist"
     echo "PASS: graph HTML density regression coverage"
 }

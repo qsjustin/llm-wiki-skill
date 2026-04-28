@@ -21,6 +21,7 @@
     buildAtlasModel,
     deriveAtlasLayout,
     resolveAtlasVisibleSnapshot,
+    resolveAtlasSelectedNodeId,
     atlasConfidenceLabel,
     atlasTypeLabel,
     atlasNodeKind,
@@ -154,18 +155,13 @@
   }
 
   function getSelectedNode() {
-    if (state.ui.selectedNodeId && state.atlasModel.byId[state.ui.selectedNodeId]) {
-      return state.atlasModel.byId[state.ui.selectedNodeId];
-    }
-    return state.visible && state.visible.nodes[0] ? state.visible.nodes[0] : state.atlasModel.nodes[0] || null;
+    const selectedNodeId = resolveAtlasSelectedNodeId(state.atlasModel, state.visible, state.ui.selectedNodeId);
+    return selectedNodeId ? state.atlasModel.byId[selectedNodeId] || null : null;
   }
 
   function refreshVisibleSnapshot() {
     state.visible = resolveAtlasVisibleSnapshot(state.atlasModel, state.atlasLayout, state.ui);
-    if (!state.ui.selectedNodeId || !state.atlasModel.byId[state.ui.selectedNodeId]) {
-      const selected = getSelectedNode();
-      state.ui.selectedNodeId = selected ? selected.id : null;
-    }
+    state.ui.selectedNodeId = resolveAtlasSelectedNodeId(state.atlasModel, state.visible, state.ui.selectedNodeId);
     return state.visible;
   }
 
@@ -338,7 +334,24 @@
 
   function renderDrawer() {
     const selected = getSelectedNode();
-    if (!selected || !drawer) return;
+    if (!drawer) return;
+    if (!selected) {
+      document.getElementById("drawer-kind").innerHTML = `<span class="spark"></span>当前范围`;
+      document.getElementById("drawer-title").textContent = "没有匹配节点";
+      document.getElementById("drawer-subtitle").textContent = "调整搜索或筛选后查看知识内容";
+      document.getElementById("drawer-summary").textContent = "当前范围内没有可显示的节点。";
+      document.getElementById("drawer-neighbor-count").textContent = "0 个";
+      const content = document.getElementById("drawer-content");
+      if (content) content.innerHTML = "<p>清除搜索词或切回全部社区后，可以继续查看节点摘要和知识内容。</p>";
+      if (neighborList) {
+        neighborList.innerHTML = "";
+        const empty = document.createElement("div");
+        empty.className = "note-card";
+        empty.textContent = "暂无相邻节点。";
+        neighborList.appendChild(empty);
+      }
+      return;
+    }
     state.ui.selectedNodeId = selected.id;
 
     const neighbors = getNeighbors(selected.id);

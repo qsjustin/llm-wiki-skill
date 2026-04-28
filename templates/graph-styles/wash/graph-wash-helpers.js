@@ -658,6 +658,8 @@
     var community = raw.community == null || raw.community === "" ? "_none" : String(raw.community);
     var x = Number(raw.x);
     var y = Number(raw.y);
+    var hasX = (typeof raw.x === "number" || (typeof raw.x === "string" && raw.x.trim() !== "")) && Number.isFinite(x);
+    var hasY = (typeof raw.y === "number" || (typeof raw.y === "string" && raw.y.trim() !== "")) && Number.isFinite(y);
     return {
       id: id,
       label: label,
@@ -675,8 +677,8 @@
       weight: clampAtlasNumber(raw.weight != null ? raw.weight : raw.score, 50, 0, 100),
       priority: 0,
       idx: index,
-      x: Number.isFinite(x) ? x : null,
-      y: Number.isFinite(y) ? y : null
+      x: hasX ? x : null,
+      y: hasY ? y : null
     };
   }
 
@@ -1011,6 +1013,24 @@
     };
   }
 
+  function resolveAtlasSelectedNodeId(model, visibleSnapshot, selectedNodeId) {
+    var safeModel = model && typeof model === "object" ? model : buildAtlasModel({});
+    var selected = selectedNodeId == null ? null : String(selectedNodeId);
+    var visible = visibleSnapshot && typeof visibleSnapshot === "object" ? visibleSnapshot : null;
+    var visibleIds = {};
+    if (visible && Array.isArray(visible.node_ids)) {
+      visible.node_ids.forEach(function (id) { visibleIds[String(id)] = true; });
+    }
+
+    if (selected && safeModel.byId && safeModel.byId[selected] && (!visible || visibleIds[selected])) {
+      return selected;
+    }
+    if (visible) {
+      return visible.nodes && visible.nodes[0] ? visible.nodes[0].id : null;
+    }
+    return safeModel.nodes && safeModel.nodes[0] ? safeModel.nodes[0].id : null;
+  }
+
   var helpers = {
     splitLabelGraphemes: splitLabelGraphemes,
     labelCharWidth: labelCharWidth,
@@ -1040,6 +1060,7 @@
     buildAtlasModel: buildAtlasModel,
     deriveAtlasLayout: deriveAtlasLayout,
     resolveAtlasVisibleSnapshot: resolveAtlasVisibleSnapshot,
+    resolveAtlasSelectedNodeId: resolveAtlasSelectedNodeId,
     getAtlasDensityMode: getAtlasDensityMode,
     atlasConfidenceLabel: atlasConfidenceLabel,
     atlasTypeLabel: atlasTypeLabel,
