@@ -1,7 +1,7 @@
 ---
 title: refactor: 东方山水图谱可用性与设计语法升级
 type: refactor
-status: active
+status: completed
 date: 2026-04-28
 ---
 
