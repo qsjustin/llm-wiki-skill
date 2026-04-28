@@ -56,7 +56,6 @@
 
   const app = document.getElementById("app");
   const atlas = document.getElementById("atlas");
-  const graphSvg = document.querySelector(".graph-svg");
   const nodeLayer = document.getElementById("node-layer");
   const edgeLayer = document.getElementById("edge-layer");
   const communityList = document.getElementById("community-list");
@@ -245,14 +244,14 @@
   function fitVisibleViewport() {
     const visible = state.visible || refreshVisibleSnapshot();
     const bounds = getAtlasModelBounds(visible.nodes, visible.nodes.length <= 1 ? 160 : 56);
-    setViewport(fitAtlasViewport(bounds, currentViewportSize(), { padding: 0.82, minScale: 0.62, maxScale: 2.2 }), true);
+    setViewport(fitAtlasViewport(bounds, currentViewportSize(), { padding: 0.82, minScale: 0.62, maxScale: 1.18 }), true);
     state.viewportReady = true;
   }
 
   function centerViewportOnNode(nodeId) {
     const node = state.atlasModel.byId[nodeId];
     if (!node) return;
-    const scale = Math.max(1.05, Math.min(state.viewport.scale || 1, 2.2));
+    const scale = Math.max(1.05, Math.min(state.viewport.scale || 1, 1.6));
     setViewport(centerAtlasViewportOnPoint(atlasNodePoint(node), currentViewportSize(), scale, viewportOptions()), true);
     state.viewportReady = true;
   }
