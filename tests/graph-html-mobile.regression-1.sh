@@ -44,6 +44,8 @@ test_graph_html_has_responsive_css() {
     assert_file_contains "$html" "overflow: auto;"
     assert_file_contains "$html" "grid-template-columns: 1fr;"
     assert_file_contains "$html" "mobile-atlas-preview"
+    assert_file_contains "$html" "button.chip {"
+    assert_file_contains "$html" "min-height: 44px;"
 
     rm -rf "$tmp_dir"
 }
