@@ -1187,15 +1187,43 @@
     var densityMode = getAtlasDensityMode(visibleNodes.length);
     var labelBudget = atlasLabelBudget(densityMode, visibleNodes.length);
     var labelNodeIds = {};
+    var startNodeIds = {};
+    var importantNodeIds = {};
+    var visibleStartEntries = safeModel.starts.filter(function (entry) {
+      return !!(entry && entry.node && visibleIdSet[entry.node.id]) &&
+        (activeCommunityId === "all" || entry.node.community === activeCommunityId);
+    });
+
+    visibleStartEntries.forEach(function (entry) {
+      startNodeIds[entry.node.id] = true;
+      importantNodeIds[entry.node.id] = true;
+    });
+
     visibleNodes.slice().sort(function (left, right) {
-      var leftForced = (selectedNodeId === left.id || matchedIds[left.id]) ? 1 : 0;
-      var rightForced = (selectedNodeId === right.id || matchedIds[right.id]) ? 1 : 0;
+      return (right.priority || 0) - (left.priority || 0);
+    }).slice(0, Math.max(0, Math.min(8, Math.ceil(visibleNodes.length * 0.08)))).forEach(function (node) {
+      importantNodeIds[node.id] = true;
+    });
+
+    visibleNodes.slice().sort(function (left, right) {
+      var leftForced = (selectedNodeId === left.id || matchedIds[left.id] || importantNodeIds[left.id]) ? 1 : 0;
+      var rightForced = (selectedNodeId === right.id || matchedIds[right.id] || importantNodeIds[right.id]) ? 1 : 0;
       if (rightForced !== leftForced) return rightForced - leftForced;
       return (right.priority || 0) - (left.priority || 0);
     }).slice(0, labelBudget).forEach(function (node) {
       labelNodeIds[node.id] = true;
     });
     if (selectedNodeId && visibleIdSet[selectedNodeId]) labelNodeIds[selectedNodeId] = true;
+    Object.keys(matchedIds).forEach(function (id) {
+      if (visibleIdSet[id]) {
+        labelNodeIds[id] = true;
+        importantNodeIds[id] = true;
+      }
+    });
+    Object.keys(startNodeIds).forEach(function (id) {
+      if (visibleIdSet[id]) labelNodeIds[id] = true;
+    });
+    if (selectedNodeId && visibleIdSet[selectedNodeId]) importantNodeIds[selectedNodeId] = true;
 
     var edgeBudget = atlasEdgeBudget(densityMode, visibleEdges.length);
     visibleEdges = visibleEdges.slice().sort(function (left, right) {
@@ -1214,9 +1242,9 @@
       densityMode: densityMode,
       labelNodeIds: labelNodeIds,
       matchedNodeIds: matchedIds,
-      starts: safeModel.starts.filter(function (entry) {
-        return activeCommunityId === "all" || entry.node.community === activeCommunityId;
-      }),
+      importantNodeIds: importantNodeIds,
+      startNodeIds: startNodeIds,
+      starts: visibleStartEntries,
       counts: {
         visible_nodes: visibleNodes.length,
         visible_edges: visibleEdges.length,

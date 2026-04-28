@@ -282,11 +282,25 @@
     return out;
   }
 
+  function isNodeImportant(node) {
+    return !!(node && state.visible && state.visible.importantNodeIds && state.visible.importantNodeIds[node.id]);
+  }
+
+  function nodeVisualRole(node, displayMode) {
+    if (!node) return "landmark";
+    if (node.id === state.ui.selectedNodeId) return "cinnabar-note";
+    if (displayMode === "point" || displayMode === "overview") return "map-pin";
+    if (state.visible && state.visible.matchedNodeIds[node.id]) return "index-slip";
+    if (isNodeImportant(node)) return "index-slip";
+    return "landmark";
+  }
+
   function nodeDisplayMode(node) {
     const mode = currentDensityMode();
     if (!node) return "card";
     if (node.id === state.ui.selectedNodeId) return "card";
     if (state.visible && state.visible.matchedNodeIds[node.id]) return "card";
+    if (isNodeImportant(node) && (mode === "overview" || mode === "point-plus-focus")) return "compact-card";
     if (mode === "overview") return state.visible.labelNodeIds[node.id] ? "compact-card" : "overview";
     if (mode === "point-plus-focus") return state.visible.labelNodeIds[node.id] ? "compact-card" : "point";
     return mode;
@@ -407,18 +421,24 @@
     nodeLayer.innerHTML = "";
     visible.nodes.forEach((node) => {
       const displayMode = nodeDisplayMode(node);
+      const visualRole = nodeVisualRole(node, displayMode);
       const button = document.createElement("button");
       button.className = "node";
       if (node.unavailable) button.classList.add("is-disabled");
       if (displayMode === "compact-card") button.classList.add("is-compact");
       if (displayMode === "point") button.classList.add("is-point");
       if (displayMode === "overview") button.classList.add("is-overview");
+      if (visualRole === "index-slip") button.classList.add("is-index-slip");
+      if (visualRole === "cinnabar-note") button.classList.add("is-cinnabar-note");
+      if (visualRole === "map-pin") button.classList.add("is-map-pin");
       if (state.visible && !state.visible.labelNodeIds[node.id]) button.classList.add("is-label-hidden");
       button.type = "button";
       button.dataset.id = node.id;
       button.dataset.type = node.type;
       button.dataset.community = node.community;
       button.dataset.densityMode = displayMode;
+      button.dataset.visualRole = visualRole;
+      button.dataset.startNode = state.visible && state.visible.startNodeIds[node.id] ? "true" : "false";
       button.style.left = `${node.x}%`;
       button.style.top = `${node.y}%`;
       button.title = node.label;

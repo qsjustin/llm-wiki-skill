@@ -93,10 +93,15 @@ test_graph_runtime_has_density_rules() {
     assert_file_contains "$REPO_ROOT/templates/graph-styles/wash/graph-wash.js" "const DENSITY_LARGE_LIMIT = 500;"
     assert_file_contains "$REPO_ROOT/templates/graph-styles/wash/graph-wash.js" "function currentDensityMode()"
     assert_file_contains "$REPO_ROOT/templates/graph-styles/wash/graph-wash.js" "function nodeDisplayMode(node)"
+    assert_file_contains "$REPO_ROOT/templates/graph-styles/wash/graph-wash.js" "function nodeVisualRole(node, displayMode)"
     assert_file_contains "$REPO_ROOT/templates/graph-styles/wash/graph-wash.js" "dataset.densityMode"
+    assert_file_contains "$REPO_ROOT/templates/graph-styles/wash/graph-wash.js" "dataset.visualRole"
     assert_file_contains "$REPO_ROOT/templates/graph-styles/wash/graph-wash-helpers.js" "function getAtlasDensityMode(count)"
     assert_file_contains "$REPO_ROOT/templates/graph-styles/wash/graph-wash-helpers.js" "function atlasLabelBudget(mode, count)"
     assert_file_contains "$REPO_ROOT/templates/graph-styles/wash/graph-wash-helpers.js" "function atlasEdgeBudget(mode, count)"
+    assert_file_contains "$REPO_ROOT/templates/graph-styles/wash/header.html" 'data-visual-role="landmark"'
+    assert_file_contains "$REPO_ROOT/templates/graph-styles/wash/header.html" 'data-visual-role="index-slip"'
+    assert_file_contains "$REPO_ROOT/templates/graph-styles/wash/header.html" 'data-visual-role="cinnabar-note"'
 }
 
 test_graph_html_builds_large_density_fixture() {
@@ -145,7 +150,12 @@ function makeGraph(count, edgeCount) {
     type: index % 5 === 0 ? "INFERRED" : "EXTRACTED",
     weight: index % 9 === 0 ? 0.4 : 0.9
   })).filter((edge) => edge.from !== edge.to);
-  return { meta: { wiki_title: "密度预算测试" }, nodes, edges };
+  return {
+    meta: { wiki_title: "密度预算测试" },
+    nodes,
+    edges,
+    learning: { entry: { recommended_start_node_id: "node-0" } }
+  };
 }
 
 function snapshotFor(count, edgeCount, selectedNodeId) {
@@ -164,12 +174,14 @@ const pointSnapshot = snapshotFor(201, 900, "node-200");
 assert.equal(pointSnapshot.densityMode, "point-plus-focus");
 assert.ok(Object.keys(pointSnapshot.labelNodeIds).length <= 61, "201-node mode should cap labels while allowing the selected node");
 assert.ok(pointSnapshot.labelNodeIds["node-200"], "selected node should stay readable in point mode");
+assert.ok(pointSnapshot.importantNodeIds["node-0"], "recommended starts should remain important in point mode");
 assert.ok(pointSnapshot.edges.length <= 800, "point mode should cap edges at 800");
 
 const overviewSnapshot = snapshotFor(501, 1500, "node-500");
 assert.equal(overviewSnapshot.densityMode, "overview");
 assert.ok(Object.keys(overviewSnapshot.labelNodeIds).length <= 41, "501-node mode should cap labels while allowing the selected node");
 assert.ok(overviewSnapshot.labelNodeIds["node-500"], "selected node should stay readable in overview mode");
+assert.ok(overviewSnapshot.importantNodeIds["node-0"], "recommended starts should remain important in overview mode");
 assert.ok(overviewSnapshot.edges.length <= 1000, "overview mode should cap edges at 1000");
 NODE
 }

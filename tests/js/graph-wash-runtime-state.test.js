@@ -167,8 +167,26 @@ describe("atlas state contract", () => {
     assert.deepEqual(snapshot.nodes.map((node) => node.id), ["b"]);
     assert.deepEqual(snapshot.edges, []);
     assert.equal(snapshot.densityMode, "card");
-    assert.equal(snapshot.starts[0].node.id, "a");
+    assert.equal(snapshot.starts[0].node.id, "b");
+    assert.equal(snapshot.importantNodeIds.b, true);
     assert.equal(snapshot.counts.total_nodes, 3);
+  });
+
+  it("keeps recommended starts and high-priority nodes readable as atlas index slips", () => {
+    const model = buildAtlasModel(rawGraph);
+    const layout = deriveAtlasLayout(model);
+    const snapshot = resolveAtlasVisibleSnapshot(model, layout, {
+      activeCommunityId: "all",
+      focusMode: "all",
+      query: "",
+      selectedNodeId: null,
+      filters: { EXTRACTED: true, INFERRED: true, AMBIGUOUS: true, UNVERIFIED: true }
+    });
+
+    assert.equal(snapshot.starts[0].node.id, "a");
+    assert.equal(snapshot.startNodeIds.a, true);
+    assert.equal(snapshot.importantNodeIds.a, true);
+    assert.equal(snapshot.labelNodeIds.a, true);
   });
 
   it("moves selection into the current visible atlas range", () => {
