@@ -21,7 +21,7 @@
 ## 效果预览
 
 <div align="center">
-<img src="docs/assets/graph-demo.gif" width="100%" alt="知识图谱演示">
+<img src="docs/assets/graph-demo.gif?v=20260428" width="100%" alt="知识图谱演示">
 </div>
 
 东方编辑部 × 数字山水风交互式知识图谱 — 双击 HTML 文件即可在浏览器中探索。搜索、过滤、节点视觉分层、首屏推荐预览、右侧摘要与正文、社区聚类和小地图定位，全部离线运行，不依赖服务器。
