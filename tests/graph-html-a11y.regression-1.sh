@@ -40,9 +40,9 @@ test_graph_html_has_reduced_motion_and_keyboard_markup() {
     html="$tmp_dir/wiki/knowledge-graph.html"
 
     assert_file_contains "$html" '@media (prefers-reduced-motion: reduce) {'
-    assert_file_contains "$html" '<h4 tabindex="0" role="button" aria-expanded="true">相邻节点</h4>'
-    assert_file_contains "$html" 'id="minimap-toggle"'
-    assert_file_contains "$html" 'aria-label="折叠小地图" aria-expanded="true"'
+    assert_file_contains "$html" '<details class="drawer-section neighbor-section" id="neighbor-details" data-collapsed="1">'
+    assert_file_contains "$html" '<summary aria-expanded="false"><span>相邻节点 <small id="drawer-neighbor-count">5 个</small></span></summary>'
+    assert_file_contains "$html" 'id="mini-map-svg"'
 
     rm -rf "$tmp_dir"
 }

@@ -1,6 +1,6 @@
 ---
 name: llm-wiki
-version: 3.3.0
+version: 3.6.0
 author: sdyckjq-lab
 license: MIT
 description: |
@@ -995,16 +995,16 @@ bash ${SKILL_DIR}/scripts/adapter-state.sh classify-run <source_id> <exit_code> 
    - 不需要额外 `npm install`
    - `node` 只用于运行随仓库分发的本地预构建 helper
 
-2d. **生成交互式图谱 HTML**（wash 水彩卡片风）：
+2d. **生成交互式图谱 HTML**（东方编辑部 × 数字山水风）：
 
    ```bash
    bash scripts/build-graph-html.sh "$WIKI_ROOT"
    ```
 
    生成 `wiki/knowledge-graph.html`。脚本把 `graph-data.json`（已做 `</script>` 转义）
-   内嵌进 `<script id="graph-data" type="application/json">`，使用本地 `d3` + `roughjs` +
-   `marked` + `purify`，离线双击即可打开。包含搜索框、关系类型筛选、边权重可视化、
-   邻居强度指示、Insights 面板、节点抽屉和社区聚类等交互功能。
+   内嵌进 `<script id="graph-data" type="application/json">`，离线双击即可打开。
+   页面保持三栏国风布局：左侧文献索引，中间数字山水图谱，右侧常驻节点详情。
+   包含搜索、社区筛选、节点密度自适应、摘要、正文、相邻节点、洞察、小地图和关系置信度图例。
 
 3. **读取 insights 并向用户展示结果**（按 `WIKI_LANG` 切换语言）：
 

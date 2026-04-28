@@ -38,14 +38,17 @@ test_graph_html_has_truncate_label_markup_hooks() {
     output_dir="$tmp_dir/wiki"
 
     build_graph_html_fixture "$tmp_dir"
+    local html="$output_dir/knowledge-graph.html"
 
-    assert_file_contains "$output_dir/graph-wash.js" 'gg.append("title").text(label);'
+    assert_file_contains "$output_dir/graph-wash.js" "button.title = node.label;"
+    assert_file_contains "$output_dir/graph-wash.js" "dataset.densityMode"
+    assert_file_contains "$html" ".node-name {"
+    assert_file_contains "$html" "text-overflow: ellipsis;"
 
     # helpers file copied to output
     [ -f "$output_dir/graph-wash-helpers.js" ] || fail "helpers file should be copied to output"
 
     # helpers loads before wash in HTML
-    local html="$output_dir/knowledge-graph.html"
     local helpers_line wash_line
     helpers_line=$(grep -n 'graph-wash-helpers.js' "$html" | head -1 | cut -d: -f1)
     wash_line=$(grep -n 'src="graph-wash.js"' "$html" | head -1 | cut -d: -f1)

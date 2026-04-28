@@ -523,7 +523,7 @@
     var safe = options && typeof options === "object" ? options : {};
     var nodes = Array.isArray(safe.nodes) ? safe.nodes : [];
     var links = Array.isArray(safe.links) ? safe.links : [];
-    var baseNodeIds = Array.isArray(safe.baseNodeIds) && safe.baseNodeIds.length
+    var baseNodeIds = Array.isArray(safe.baseNodeIds)
       ? safe.baseNodeIds.slice()
       : nodes.map(function (node) { return node.id; });
     var filteredLinks = filterLinksByTypes(links, safe.filters);
@@ -566,6 +566,471 @@
     return mode === "path";
   }
 
+  var ATLAS_CONFIDENCE_LABELS = {
+    EXTRACTED: "直接提取",
+    INFERRED: "推断关联",
+    AMBIGUOUS: "存在歧义",
+    UNVERIFIED: "未核实"
+  };
+
+  var ATLAS_TYPE_LABELS = {
+    topic: "主题",
+    entity: "实体",
+    source: "来源"
+  };
+
+  var ATLAS_TYPE_KINDS = {
+    topic: "TOPIC",
+    entity: "ENTITY",
+    source: "SOURCE"
+  };
+
+  function normalizeAtlasType(type) {
+    var normalized = String(type || "entity").toLowerCase();
+    return ATLAS_TYPE_LABELS[normalized] ? normalized : "entity";
+  }
+
+  function normalizeAtlasConfidence(confidence) {
+    var normalized = String(confidence || "EXTRACTED").toUpperCase();
+    return ATLAS_CONFIDENCE_LABELS[normalized] ? normalized : "EXTRACTED";
+  }
+
+  function atlasConfidenceLabel(confidence) {
+    var normalized = normalizeAtlasConfidence(confidence);
+    return ATLAS_CONFIDENCE_LABELS[normalized];
+  }
+
+  function atlasTypeLabel(type) {
+    var normalized = normalizeAtlasType(type);
+    return ATLAS_TYPE_LABELS[normalized];
+  }
+
+  function atlasNodeKind(type) {
+    var normalized = normalizeAtlasType(type);
+    return ATLAS_TYPE_KINDS[normalized];
+  }
+
+  function clampAtlasNumber(value, fallback, min, max) {
+    var numeric = Number(value);
+    if (!Number.isFinite(numeric)) numeric = fallback;
+    if (Number.isFinite(Number(min))) numeric = Math.max(Number(min), numeric);
+    if (Number.isFinite(Number(max))) numeric = Math.min(Number(max), numeric);
+    return numeric;
+  }
+
+  function atlasEndpointId(value) {
+    if (value && typeof value === "object" && value.id != null) return String(value.id);
+    return value == null ? "" : String(value);
+  }
+
+  function stripAtlasMarkdown(raw) {
+    return String(raw || "")
+      .replace(/^---[\s\S]*?---\s*/m, "")
+      .replace(/```[\s\S]*?```/g, " ")
+      .replace(/!\[[^\]]*\]\([^)]+\)/g, " ")
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+      .replace(/\[\[([^\]|]+)\|?([^\]]*)\]\]/g, function (_, target, label) {
+        return label || target;
+      })
+      .replace(/^#{1,6}\s+/gm, "")
+      .replace(/^[-*+]\s+/gm, "")
+      .replace(/^\d+\.\s+/gm, "")
+      .replace(/[*_`>#]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function deriveAtlasSummary(node, content) {
+    var explicitSummary = node && node.summary != null ? String(node.summary).trim() : "";
+    if (explicitSummary) return explicitSummary.length > 170 ? explicitSummary.slice(0, 170).trim() + "…" : explicitSummary;
+    var summarySource = String(content || (node && node.content) || "").replace(/^#\s+.*(?:\r?\n)+/, "");
+    var stripped = stripAtlasMarkdown(summarySource);
+    if (!stripped) return "";
+    return stripped.length > 170 ? stripped.slice(0, 170).trim() + "…" : stripped;
+  }
+
+  function normalizeAtlasNode(rawNode, index) {
+    var raw = rawNode && typeof rawNode === "object" ? rawNode : {};
+    var id = raw.id == null ? "node-" + index : String(raw.id);
+    var label = raw.label == null || String(raw.label).trim() === "" ? id : String(raw.label).trim();
+    var content = raw.content == null ? "" : String(raw.content);
+    var type = normalizeAtlasType(raw.type);
+    var community = raw.community == null || raw.community === "" ? "_none" : String(raw.community);
+    var x = Number(raw.x);
+    var y = Number(raw.y);
+    var hasX = (typeof raw.x === "number" || (typeof raw.x === "string" && raw.x.trim() !== "")) && Number.isFinite(x);
+    var hasY = (typeof raw.y === "number" || (typeof raw.y === "string" && raw.y.trim() !== "")) && Number.isFinite(y);
+    return {
+      id: id,
+      label: label,
+      type: type,
+      type_label: atlasTypeLabel(type),
+      kind: atlasNodeKind(type),
+      community: community,
+      source_path: raw.source_path || raw.source || raw.path || "",
+      confidence: normalizeAtlasConfidence(raw.confidence || raw.type_confidence),
+      confidence_label: atlasConfidenceLabel(raw.confidence || raw.type_confidence),
+      content: content,
+      summary: deriveAtlasSummary(raw, content),
+      unavailable: raw.unavailable === true || raw.available === false,
+      degree: 0,
+      weight: clampAtlasNumber(raw.weight != null ? raw.weight : raw.score, 50, 0, 100),
+      priority: 0,
+      idx: index,
+      x: hasX ? x : null,
+      y: hasY ? y : null
+    };
+  }
+
+  function normalizeAtlasEdge(rawEdge, index) {
+    var raw = rawEdge && typeof rawEdge === "object" ? rawEdge : {};
+    var sourceId = atlasEndpointId(raw.from != null ? raw.from : raw.source);
+    var targetId = atlasEndpointId(raw.to != null ? raw.to : raw.target);
+    return {
+      id: raw.id == null ? "edge-" + index : String(raw.id),
+      source: sourceId,
+      target: targetId,
+      from: sourceId,
+      to: targetId,
+      type: normalizeAtlasConfidence(raw.type || raw.confidence),
+      confidence_label: atlasConfidenceLabel(raw.type || raw.confidence),
+      weight: clampAtlasNumber(raw.weight, 0.6, 0, 1),
+      signals: raw.signals && typeof raw.signals === "object" ? raw.signals : {},
+      source_signal_available: raw.source_signal_available === true
+    };
+  }
+
+  function buildAtlasSearchHaystack(node) {
+    return [
+      node && node.label,
+      node && node.id,
+      node && node.type_label,
+      node && node.source_path,
+      node && node.summary,
+      node && stripAtlasMarkdown(node.content)
+    ].join("\n").toLowerCase();
+  }
+
+  function buildAtlasSearchIndex(nodes) {
+    if (!Array.isArray(nodes)) return [];
+    return nodes.map(function (node) {
+      return { node: node, haystack: buildAtlasSearchHaystack(node) };
+    });
+  }
+
+  function deriveAtlasCommunities(rawGraph, nodes, communityById) {
+    var learning = normalizeLearning(rawGraph && rawGraph.learning);
+    var fromLearning = Array.isArray(learning.communities) ? learning.communities : [];
+    var communities = [];
+    var seen = {};
+
+    fromLearning.forEach(function (community) {
+      if (!community || community.id == null) return;
+      var id = String(community.id);
+      var derived = communityById[id] || { nodes: [] };
+      seen[id] = true;
+      communities.push({
+        id: id,
+        label: community.label || id,
+        node_count: Number.isFinite(Number(community.node_count)) ? Number(community.node_count) : derived.nodes.length,
+        source_count: Number.isFinite(Number(community.source_count)) ? Number(community.source_count) : 0,
+        is_primary: community.is_primary === true,
+        recommended_start_node_id: community.recommended_start_node_id || null,
+        color_index: communities.length
+      });
+    });
+
+    Object.keys(communityById).sort().forEach(function (id) {
+      if (seen[id]) return;
+      var group = communityById[id];
+      var topic = group.nodes.find(function (node) { return node.type === "topic"; });
+      communities.push({
+        id: id,
+        label: id === "_none" ? "未分组" : (topic && topic.label) || id,
+        node_count: group.nodes.length,
+        source_count: group.nodes.filter(function (node) { return node.type === "source"; }).length,
+        is_primary: communities.length === 0,
+        recommended_start_node_id: null,
+        color_index: communities.length
+      });
+    });
+
+    communities.sort(function (left, right) {
+      if (!!right.is_primary !== !!left.is_primary) return right.is_primary ? 1 : -1;
+      if ((right.node_count || 0) !== (left.node_count || 0)) return (right.node_count || 0) - (left.node_count || 0);
+      return String(left.label || left.id).localeCompare(String(right.label || right.id));
+    });
+    communities.forEach(function (community, index) {
+      community.color_index = index;
+    });
+    return communities;
+  }
+
+  function buildAtlasStarts(rawGraph, nodes, byId, communities) {
+    var starts = [];
+    var seen = {};
+    function add(id, reason) {
+      if (id == null) return;
+      var nodeId = String(id);
+      if (!byId[nodeId] || seen[nodeId]) return;
+      seen[nodeId] = true;
+      starts.push({ node: byId[nodeId], reason: reason || "" });
+    }
+    var learning = normalizeLearning(rawGraph && rawGraph.learning);
+    add(learning.entry && learning.entry.recommended_start_node_id, "全局推荐起点");
+    communities.forEach(function (community) {
+      add(community.recommended_start_node_id, community.label + " · 推荐起点");
+    });
+    nodes.slice().sort(function (left, right) {
+      return (right.priority || 0) - (left.priority || 0);
+    }).forEach(function (node) {
+      if (starts.length < 6) add(node.id, atlasTypeLabel(node.type) + " · " + atlasConfidenceLabel(node.confidence));
+    });
+    return starts.slice(0, 6);
+  }
+
+  function normalizeAtlasInsights(insights) {
+    var safe = insights && typeof insights === "object" ? insights : {};
+    return {
+      surprising_connections: Array.isArray(safe.surprising_connections) ? safe.surprising_connections : [],
+      isolated_nodes: Array.isArray(safe.isolated_nodes) ? safe.isolated_nodes : [],
+      bridge_nodes: Array.isArray(safe.bridge_nodes) ? safe.bridge_nodes : [],
+      sparse_communities: Array.isArray(safe.sparse_communities) ? safe.sparse_communities : [],
+      meta: safe.meta && typeof safe.meta === "object" ? safe.meta : { degraded: false }
+    };
+  }
+
+  function buildAtlasModel(rawGraph) {
+    var raw = rawGraph && typeof rawGraph === "object" ? rawGraph : {};
+    var nodes = Array.isArray(raw.nodes) ? raw.nodes.map(normalizeAtlasNode) : [];
+    var byId = {};
+    var communityById = {};
+    nodes.forEach(function (node) {
+      byId[node.id] = node;
+      if (!communityById[node.community]) communityById[node.community] = { id: node.community, nodes: [] };
+      communityById[node.community].nodes.push(node);
+    });
+
+    var edges = (Array.isArray(raw.edges) ? raw.edges : [])
+      .map(normalizeAtlasEdge)
+      .filter(function (edge) {
+        return !!(byId[edge.source] && byId[edge.target]);
+      });
+
+    edges.forEach(function (edge) {
+      byId[edge.source].degree += 1;
+      byId[edge.target].degree += 1;
+    });
+    nodes.forEach(function (node) {
+      node.priority = node.degree * 12 + node.weight + (node.type === "topic" ? 12 : node.type === "source" ? 6 : 0);
+    });
+
+    var communities = deriveAtlasCommunities(raw, nodes, communityById);
+    var communityMap = {};
+    communities.forEach(function (community) {
+      communityMap[community.id] = community;
+    });
+
+    return {
+      meta: {
+        wiki_title: raw.meta && raw.meta.wiki_title ? String(raw.meta.wiki_title) : "知识库",
+        total_nodes: nodes.length,
+        total_edges: edges.length,
+        build_date: raw.meta && raw.meta.build_date ? String(raw.meta.build_date) : ""
+      },
+      nodes: nodes,
+      edges: edges,
+      byId: byId,
+      communities: communities,
+      communityById: communityMap,
+      starts: buildAtlasStarts(raw, nodes, byId, communities),
+      searchIndex: buildAtlasSearchIndex(nodes),
+      insights: normalizeAtlasInsights(raw.insights)
+    };
+  }
+
+  function deriveAtlasLayout(model) {
+    var safe = model && typeof model === "object" ? model : { nodes: [], communities: [] };
+    var centers = [
+      { x: 50, y: 48 },
+      { x: 30, y: 34 },
+      { x: 70, y: 36 },
+      { x: 30, y: 72 },
+      { x: 72, y: 70 },
+      { x: 18, y: 52 },
+      { x: 84, y: 52 },
+      { x: 50, y: 78 }
+    ];
+    var communityIndex = {};
+    (safe.communities || []).forEach(function (community, index) {
+      communityIndex[community.id] = index;
+    });
+    var grouped = {};
+    (safe.nodes || []).forEach(function (node) {
+      if (!grouped[node.community]) grouped[node.community] = [];
+      grouped[node.community].push(node);
+    });
+    Object.keys(grouped).forEach(function (communityId) {
+      grouped[communityId].sort(function (left, right) {
+        return (right.priority || 0) - (left.priority || 0);
+      });
+      var center = centers[(communityIndex[communityId] || 0) % centers.length];
+      var count = grouped[communityId].length;
+      grouped[communityId].forEach(function (node, index) {
+        if (node.x != null && node.y != null && Number.isFinite(Number(node.x)) && Number.isFinite(Number(node.y))) {
+          node.x = clampAtlasNumber(node.x, center.x, 5, 95);
+          node.y = clampAtlasNumber(node.y, center.y, 8, 92);
+          return;
+        }
+        var ring = Math.floor(index / 8);
+        var ringIndex = index % 8;
+        var angle = ((ringIndex / Math.min(8, Math.max(1, count))) * Math.PI * 2) + ring * 0.42;
+        var radiusX = 7 + ring * 5 + Math.min(5, count * 0.16);
+        var radiusY = 5 + ring * 4 + Math.min(4, count * 0.12);
+        node.x = clampAtlasNumber(center.x + Math.cos(angle) * radiusX, center.x, 5, 95);
+        node.y = clampAtlasNumber(center.y + Math.sin(angle) * radiusY, center.y, 8, 92);
+      });
+    });
+    return {
+      nodes: (safe.nodes || []).slice(),
+      edges: (safe.edges || []).slice(),
+      nodePositions: (safe.nodes || []).reduce(function (out, node) {
+        out[node.id] = { x: node.x, y: node.y };
+        return out;
+      }, {})
+    };
+  }
+
+  function getAtlasDensityMode(count) {
+    var nodeCount = Number.isFinite(Number(count)) ? Number(count) : 0;
+    if (nodeCount > 500) return "overview";
+    if (nodeCount > 200) return "point-plus-focus";
+    if (nodeCount > 80) return "compact-card";
+    return "card";
+  }
+
+  function atlasLabelBudget(mode, count) {
+    if (mode === "overview") return 40;
+    if (mode === "point-plus-focus") return 60;
+    if (mode === "compact-card") return Math.min(120, count);
+    return count;
+  }
+
+  function atlasEdgeBudget(mode, count) {
+    if (mode === "overview") return 1000;
+    if (mode === "point-plus-focus") return 800;
+    return count;
+  }
+
+  function resolveAtlasVisibleSnapshot(model, layout, uiState) {
+    var safeModel = model && typeof model === "object" ? model : buildAtlasModel({});
+    var safeUI = uiState && typeof uiState === "object" ? uiState : {};
+    var activeCommunityId = safeUI.activeCommunityId == null ? "all" : String(safeUI.activeCommunityId);
+    var query = typeof safeUI.query === "string" ? safeUI.query.trim().toLowerCase() : "";
+    var focusMode = safeUI.focusMode || "all";
+    var selectedNodeId = safeUI.selectedNodeId == null ? null : String(safeUI.selectedNodeId);
+    var filters = safeUI.filters && typeof safeUI.filters === "object" ? safeUI.filters : {};
+
+    var baseNodes = safeModel.nodes.filter(function (node) {
+      if (activeCommunityId !== "all" && node.community !== activeCommunityId) return false;
+      if (focusMode === "source" && node.type !== "source") return false;
+      return true;
+    });
+
+    if (focusMode === "core" && baseNodes.length > 8) {
+      var keepCount = Math.max(8, Math.ceil(baseNodes.length * 0.45));
+      var keep = {};
+      baseNodes.slice().sort(function (left, right) {
+        return (right.priority || 0) - (left.priority || 0);
+      }).slice(0, keepCount).forEach(function (node) {
+        keep[node.id] = true;
+      });
+      if (selectedNodeId && safeModel.byId[selectedNodeId]) keep[selectedNodeId] = true;
+      baseNodes = baseNodes.filter(function (node) { return !!keep[node.id]; });
+    }
+
+    var baseIdSet = {};
+    baseNodes.forEach(function (node) { baseIdSet[node.id] = true; });
+    var searchIndex = buildAtlasSearchIndex(baseNodes);
+    var matchedIds = {};
+    var visibleNodes = !query
+      ? baseNodes
+      : searchIndex.filter(function (entry) {
+          return entry.haystack.indexOf(query) !== -1;
+        }).map(function (entry) {
+          matchedIds[entry.node.id] = true;
+          return entry.node;
+        });
+    var visibleIdSet = {};
+    visibleNodes.forEach(function (node) { visibleIdSet[node.id] = true; });
+
+    var visibleEdges = safeModel.edges.filter(function (edge) {
+      var edgeType = edge.type || "EXTRACTED";
+      if (filters[edgeType] === false) return false;
+      return !!(visibleIdSet[edge.source] && visibleIdSet[edge.target]);
+    });
+
+    var densityMode = getAtlasDensityMode(visibleNodes.length);
+    var labelBudget = atlasLabelBudget(densityMode, visibleNodes.length);
+    var labelNodeIds = {};
+    visibleNodes.slice().sort(function (left, right) {
+      var leftForced = (selectedNodeId === left.id || matchedIds[left.id]) ? 1 : 0;
+      var rightForced = (selectedNodeId === right.id || matchedIds[right.id]) ? 1 : 0;
+      if (rightForced !== leftForced) return rightForced - leftForced;
+      return (right.priority || 0) - (left.priority || 0);
+    }).slice(0, labelBudget).forEach(function (node) {
+      labelNodeIds[node.id] = true;
+    });
+    if (selectedNodeId && visibleIdSet[selectedNodeId]) labelNodeIds[selectedNodeId] = true;
+
+    var edgeBudget = atlasEdgeBudget(densityMode, visibleEdges.length);
+    visibleEdges = visibleEdges.slice().sort(function (left, right) {
+      var leftSelected = selectedNodeId && (left.source === selectedNodeId || left.target === selectedNodeId) ? 1 : 0;
+      var rightSelected = selectedNodeId && (right.source === selectedNodeId || right.target === selectedNodeId) ? 1 : 0;
+      if (rightSelected !== leftSelected) return rightSelected - leftSelected;
+      return (right.weight || 0) - (left.weight || 0);
+    }).slice(0, edgeBudget);
+
+    return {
+      node_ids: visibleNodes.map(function (node) { return node.id; }),
+      nodes: visibleNodes,
+      edges: visibleEdges,
+      links: visibleEdges,
+      searchIndex: searchIndex,
+      densityMode: densityMode,
+      labelNodeIds: labelNodeIds,
+      matchedNodeIds: matchedIds,
+      starts: safeModel.starts.filter(function (entry) {
+        return activeCommunityId === "all" || entry.node.community === activeCommunityId;
+      }),
+      counts: {
+        visible_nodes: visibleNodes.length,
+        visible_edges: visibleEdges.length,
+        total_nodes: safeModel.nodes.length,
+        total_edges: safeModel.edges.length,
+        total_communities: safeModel.communities.length
+      }
+    };
+  }
+
+  function resolveAtlasSelectedNodeId(model, visibleSnapshot, selectedNodeId) {
+    var safeModel = model && typeof model === "object" ? model : buildAtlasModel({});
+    var selected = selectedNodeId == null ? null : String(selectedNodeId);
+    var visible = visibleSnapshot && typeof visibleSnapshot === "object" ? visibleSnapshot : null;
+    var visibleIds = {};
+    if (visible && Array.isArray(visible.node_ids)) {
+      visible.node_ids.forEach(function (id) { visibleIds[String(id)] = true; });
+    }
+
+    if (selected && safeModel.byId && safeModel.byId[selected] && (!visible || visibleIds[selected])) {
+      return selected;
+    }
+    if (visible) {
+      return visible.nodes && visible.nodes[0] ? visible.nodes[0].id : null;
+    }
+    return safeModel.nodes && safeModel.nodes[0] ? safeModel.nodes[0].id : null;
+  }
+
   var helpers = {
     splitLabelGraphemes: splitLabelGraphemes,
     labelCharWidth: labelCharWidth,
@@ -591,7 +1056,16 @@
     applySearchToNodeIds: applySearchToNodeIds,
     applyFocusMode: applyFocusMode,
     resolveVisibleSnapshot: resolveVisibleSnapshot,
-    shouldAutoOpenDrawer: shouldAutoOpenDrawer
+    shouldAutoOpenDrawer: shouldAutoOpenDrawer,
+    buildAtlasModel: buildAtlasModel,
+    deriveAtlasLayout: deriveAtlasLayout,
+    resolveAtlasVisibleSnapshot: resolveAtlasVisibleSnapshot,
+    resolveAtlasSelectedNodeId: resolveAtlasSelectedNodeId,
+    getAtlasDensityMode: getAtlasDensityMode,
+    atlasConfidenceLabel: atlasConfidenceLabel,
+    atlasTypeLabel: atlasTypeLabel,
+    atlasNodeKind: atlasNodeKind,
+    stripAtlasMarkdown: stripAtlasMarkdown
   };
 
   root.WikiGraphWashHelpers = helpers;

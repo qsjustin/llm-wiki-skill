@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>知识图谱 · HTML测试知识库</title>
+  <title>llm-wiki 知识舆图 · 东方编辑部</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%238B2E24'/%3E%3Cpath d='M10 43 C17 34 22 25 29 31 C35 18 42 14 54 43' fill='none' stroke='%23FFFDF7' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M14 49 C24 45 34 46 50 49' fill='none' stroke='%23FFFDF7' stroke-width='3' stroke-linecap='round' opacity='.75'/%3E%3Ccircle cx='43' cy='18' r='3' fill='%23FFFDF7'/%3E%3C/svg%3E">
   <style>
     :root {
@@ -1223,90 +1223,6 @@
       display: block;
     }
 
-
-    .node.is-compact {
-      min-height: 34px;
-      max-width: 130px;
-      padding: 6px 9px;
-      border-radius: 10px;
-    }
-
-    .node.is-compact .node-kind,
-    .node.is-compact .node-meta {
-      display: none;
-    }
-
-    .node.is-compact .node-name {
-      max-width: 104px;
-      font-size: 12px;
-    }
-
-    .node.is-point,
-    .node.is-overview {
-      width: 14px;
-      height: 14px;
-      min-width: 14px;
-      min-height: 14px;
-      padding: 0;
-      border-radius: 999px;
-      border: 0;
-      background: var(--night);
-      box-shadow: 0 0 0 4px rgba(49, 95, 114, .14);
-    }
-
-    .node.is-point[data-type="topic"],
-    .node.is-overview[data-type="topic"] { background: var(--cinnabar); }
-
-    .node.is-point[data-type="source"],
-    .node.is-overview[data-type="source"] { background: var(--jade); }
-
-    .node.is-point .node-kind,
-    .node.is-point .node-name,
-    .node.is-point .node-meta,
-    .node.is-overview .node-kind,
-    .node.is-overview .node-name,
-    .node.is-overview .node-meta {
-      display: none;
-    }
-
-    .node.is-label-hidden .node-name {
-      display: none;
-    }
-
-    .density-notice {
-      position: absolute;
-      z-index: 4;
-      right: 18px;
-      bottom: 18px;
-      max-width: 280px;
-      padding: 10px 12px;
-      border-radius: 10px;
-      border: 1px solid rgba(183, 121, 31, .45);
-      background: rgba(255, 253, 247, .82);
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.5;
-      box-shadow: var(--soft-shadow);
-      display: none;
-    }
-
-    .atlas[data-density="overview"] .density-notice {
-      display: block;
-    }
-
-    .knowledge-card a.wikilink {
-      display: inline;
-      min-height: 0;
-      color: var(--cinnabar);
-      text-decoration: underline;
-      text-underline-offset: 3px;
-    }
-
-    .knowledge-card a.wikilink--dead {
-      color: var(--muted);
-      text-decoration-style: dotted;
-    }
-
     @keyframes drift {
       from {
         transform: translateX(-2%);
@@ -1415,18 +1331,6 @@
         grid-template-columns: 1fr;
       }
 
-      .canvas-toolbar {
-        align-items: start;
-      }
-
-      .canvas-actions {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .canvas-actions .state-dock {
-        grid-column: 1 / -1;
-      }
-
       .status-pill,
       .chip {
         min-height: 44px;
@@ -1439,16 +1343,6 @@
 
       .state-dock {
         display: grid;
-      }
-
-      .canvas-actions .state-dock {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-      }
-
-      .ghost-button,
-      .state-button {
-        min-height: 40px;
-        padding-inline: 8px;
       }
 
       .node {
@@ -1464,7 +1358,7 @@
   </style>
 </head>
 <body>
-  <main class="app" id="app">
+  <main class="app">
     <header class="topbar" aria-label="图谱标题与状态">
       <div class="brand">
         <div class="seal" aria-hidden="true">
@@ -1477,28 +1371,28 @@
           </svg>
         </div>
         <div>
-          <h1 id="wiki-title">HTML测试知识库 知识舆图</h1>
+          <h1>llm-wiki 知识舆图</h1>
           <p>国风知识库·数字山水图</p>
         </div>
       </div>
       <div class="status-strip">
-        <span class="status-pill"><i class="status-dot"></i>已生成 3 个索引点</span>
-        <span class="status-pill">关系 2 条</span>
-        <span class="status-pill">最近更新 2026-01-01</span>
-        <a class="ghost-button github-button brand__github" href="https://github.com/sdyckjq-lab/llm-wiki-skill" target="_blank" rel="noopener" aria-label="打开 GitHub 项目">
+        <span class="status-pill"><i class="status-dot"></i>已生成 128 个索引点</span>
+        <span class="status-pill">关系 246 条</span>
+        <span class="status-pill">最近更新 2026-04-27</span>
+        <button class="ghost-button github-button" type="button" aria-label="打开 GitHub 项目">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path>
             <path d="M9 18c-4.51 2-5-2-7-2"></path>
           </svg>
           <span>GitHub</span>
-        </a>
+        </button>
       </div>
     </header>
 
     <section class="mobile-atlas-preview" aria-label="移动端图谱预览">
       <div class="preview-copy">
         <strong>数字山水图谱</strong>
-        <span>3 点 · 2 关系</span>
+        <span>128 点 · 246 关系</span>
       </div>
       <div class="preview-map" aria-hidden="true"></div>
     </section>
@@ -1594,7 +1488,6 @@
           <p class="state-title">图谱数据没有加载成功</p>
           <p class="state-copy">请确认本地 graph-data.json 存在且格式完整。</p>
         </div>
-        <div class="density-notice" id="density-notice">当前视图过密，可搜索或筛选社区。</div>
       </div>
 
       <footer class="canvas-footer" aria-label="图谱二级信息">
@@ -1607,9 +1500,9 @@
             <span class="confidence"><i></i>未核实</span>
           </div>
         </div>
-        <div class="mini-map" id="minimap" data-collapsed="0">
-          <div class="footer-label"><span>小地图</span><span>缩略图</span></div>
-          <svg id="mini-map-svg" viewBox="0 0 160 54" aria-hidden="true">
+        <div class="mini-map">
+          <div class="footer-label"><span>小地图</span><span>MAP</span></div>
+          <svg viewBox="0 0 160 54" aria-hidden="true">
             <path d="M8 40 C34 20 54 36 76 22 C98 8 118 24 150 12" fill="none" stroke="#cfc4b1" stroke-width="1.4"></path>
             <circle cx="28" cy="34" r="3" fill="#315f72"></circle>
             <circle cx="58" cy="27" r="3" fill="#8b2e24"></circle>
@@ -1626,7 +1519,7 @@
       </footer>
     </section>
 
-    <aside class="drawer" id="drawer" aria-label="批注札记详情">
+    <aside class="drawer" aria-label="批注札记详情">
       <header class="drawer-header">
         <div class="eyebrow" id="drawer-kind"><span class="spark"></span>TOPIC · SELECTED</div>
         <h2 id="drawer-title">知识编译</h2>
@@ -1647,8 +1540,8 @@
           </div>
         </section>
 
-        <details class="drawer-section neighbor-section" id="neighbor-details" data-collapsed="1">
-          <summary aria-expanded="false"><span>相邻节点 <small id="drawer-neighbor-count">5 个</small></span></summary>
+        <details class="drawer-section neighbor-section" id="neighbor-details">
+          <summary><span>相邻节点 <small id="drawer-neighbor-count">5 个</small></span></summary>
           <div class="neighbor-list" id="neighbor-list"></div>
         </details>
 
@@ -1656,81 +1549,360 @@
           <h3>札记</h3>
           <div class="notes-list">
             <div class="note-card">批注：适合放在 README 首屏，作为“不是一次性总结”的视觉证明。</div>
-            <div class="note-card">待看：梳理“札记阅读”和“图谱入口”的职责边界。</div>
+            <div class="note-card">待看：对比“学习驾驶舱”和“图谱入口”的职责边界。</div>
           </div>
         </section>
       </div>
 
       <footer class="drawer-actions">
-        <button class="primary-button" type="button" id="queue-action">加入学习队列</button>
-        <button class="ghost-button" type="button" id="source-action">查看来源</button>
+        <button class="primary-button" type="button">加入学习队列</button>
+        <button class="ghost-button" type="button">查看来源</button>
       </footer>
     </aside>
   </main>
 
-  <script id="graph-data" type="application/json">
-{
-  "meta": {
-    "build_date": "2026-01-01T00:00:00Z",
-    "wiki_title": "HTML测试知识库",
-    "total_nodes": 3,
-    "total_edges": 2,
-    "initial_view": ["A", "B", "C"],
-    "degraded": false
-  },
-  "nodes": [
-    {
-      "id": "A",
-      "label": "节点A",
-      "type": "entity",
-      "community": "t1",
-      "content": "# 节点A\n\n这是节点A的内容。\n",
-      "source_path": "/fake/wiki/entities/A.md"
-    },
-    {
-      "id": "B",
-      "label": "节点B",
-      "type": "entity",
-      "community": "t1",
-      "content": "# 节点B\n\n这是节点B的内容。\n",
-      "source_path": "/fake/wiki/entities/B.md"
-    },
-    {
-      "id": "C",
-      "label": "节点C",
-      "type": "entity",
-      "community": null,
-      "content": "# 节点C\n\n包含 <\/script> 标签测试。\n",
-      "source_path": "/fake/wiki/entities/C.md"
+  <script>
+    const communities = [
+      { id: "all", label: "全部社区", meta: "128 个节点", count: "ALL", color: "#8b2e24" },
+      { id: "method", label: "方法论", meta: "知识编译、查询、沉淀", count: 36, color: "#315f72" },
+      { id: "runtime", label: "图谱运行时", meta: "模板、状态、交互", count: 42, color: "#4b7564" },
+      { id: "sources", label: "素材来源", meta: "网页、PDF、公众号、YouTube", count: 28, color: "#b7791f" },
+      { id: "quality", label: "质量检查", meta: "lint、缓存、隐私自查", count: 22, color: "#6f557f" }
+    ];
+
+    const nodes = [
+      {
+        id: "compile", label: "知识编译", type: "topic", community: "method", x: 50, y: 46, weight: 96,
+        source: "wiki/topics/知识编译.md", confidence: "EXTRACTED",
+        summary: "知识编译强调“整理一次，持续维护”。它连接素材消化、结构化页面、缓存、查询和图谱展示，是 llm-wiki 区别于临时问答的关键。"
+      },
+      {
+        id: "ingest", label: "素材消化", type: "topic", community: "method", x: 31, y: 35, weight: 86,
+        source: "SKILL.md", confidence: "EXTRACTED",
+        summary: "把链接、文件或粘贴内容转成结构化 wiki 页面，并保留来源、摘要、实体和主题关系。"
+      },
+      {
+        id: "query", label: "查询沉淀", type: "topic", community: "method", x: 68, y: 37, weight: 78,
+        source: "wiki/queries/", confidence: "INFERRED",
+        summary: "查询不是一次性回答，有价值的综合结论可以保存回知识库，让后续上下文继续生长。"
+      },
+      {
+        id: "graph", label: "交互式图谱", type: "entity", community: "runtime", x: 52, y: 66, weight: 91,
+        source: "templates/graph-styles/wash/", confidence: "EXTRACTED",
+        summary: "离线 HTML 图谱承载搜索、筛选、社区聚类、洞察、小地图和学习驾驶舱。"
+      },
+      {
+        id: "visible", label: "可见状态快照", type: "entity", community: "runtime", x: 72, y: 63, weight: 72,
+        source: "docs/solutions/best-practices/learning-cockpit-visible-state-reframe-2026-04-24.md", confidence: "EXTRACTED",
+        summary: "社区、聚焦、搜索和边过滤统一收敛到一份可见状态，避免各面板显示不一致。"
+      },
+      {
+        id: "cache", label: "智能缓存", type: "entity", community: "quality", x: 26, y: 64, weight: 68,
+        source: "docs/solutions/workflow-issues/cache-update-reliability-2026-04-16.md", confidence: "EXTRACTED",
+        summary: "写入即更新，避免素材重复整理，也让弱模型不容易漏掉缓存。"
+      },
+      {
+        id: "web", label: "网页文章", type: "source", community: "sources", x: 16, y: 24, weight: 54,
+        source: "raw/articles/", confidence: "EXTRACTED",
+        summary: "网页内容可通过可选提取器进入主线；失败时保留手动回退入口。"
+      },
+      {
+        id: "pdf", label: "PDF 与本地文件", type: "source", community: "sources", x: 18, y: 78, weight: 48,
+        source: "raw/pdfs/", confidence: "EXTRACTED",
+        summary: "本地文件属于核心主线，不依赖外挂，适合长期研究资料积累。"
+      },
+      {
+        id: "wechat", label: "微信公众号", type: "source", community: "sources", x: 82, y: 22, weight: 44,
+        source: "raw/wechat/", confidence: "AMBIGUOUS", unavailable: true,
+        summary: "公众号提取依赖可选环境，当前提取器不可用时应显示明确状态和手动粘贴入口。"
+      },
+      {
+        id: "lint", label: "健康检查", type: "entity", community: "quality", x: 84, y: 79, weight: 61,
+        source: "scripts/lint-wiki.sh", confidence: "INFERRED",
+        summary: "检测孤立页面、断链、索引一致性和潜在矛盾，帮助知识库保持可维护。"
+      }
+    ];
+
+    const edges = [
+      ["compile", "ingest", "extracted"],
+      ["compile", "query", "extracted"],
+      ["compile", "graph", "extracted"],
+      ["graph", "visible", "extracted"],
+      ["ingest", "cache", "inferred"],
+      ["ingest", "web", "extracted"],
+      ["ingest", "pdf", "extracted"],
+      ["ingest", "wechat", "ambiguous"],
+      ["query", "lint", "inferred"],
+      ["visible", "lint", "unverified"],
+      ["cache", "graph", "inferred"],
+      ["web", "compile", "ambiguous"]
+    ];
+
+    const communityList = document.getElementById("community-list");
+    const startList = document.getElementById("start-list");
+    const nodeLayer = document.getElementById("node-layer");
+    const edgeLayer = document.getElementById("edge-layer");
+    const search = document.getElementById("search");
+    const noResults = document.getElementById("no-results");
+    const atlas = document.getElementById("atlas");
+    const canvasTitle = document.getElementById("canvas-title");
+    const canvasSubtitle = document.getElementById("canvas-subtitle");
+    const insightTitle = document.getElementById("insight-title");
+    const insightCopy = document.getElementById("insight-copy");
+
+    let selectedNodeId = "compile";
+    let activeCommunity = "all";
+    let focusMode = "all";
+    let dimUnselected = false;
+
+    const nodeById = new Map(nodes.map(node => [node.id, node]));
+
+    function nodeKind(node) {
+      if (node.type === "topic") return "TOPIC";
+      if (node.type === "source") return "SOURCE";
+      return "ENTITY";
     }
-  ],
-  "edges": [
-    {"id": "e1", "from": "A", "to": "B", "type": "EXTRACTED"},
-    {"id": "e2", "from": "B", "to": "C", "type": "INFERRED"}
-  ]
-}
-</script>
 
-<!-- TWEAKS DEFAULTS (editable by host) -->
-<script>
-window.__TWEAKS = /*EDITMODE-BEGIN*/{
-  "variant": "wash",
-  "sizeMode": "uniform",
-  "bubbleMode": "wash",
-  "nodeStyle": "card"
-}/*EDITMODE-END*/;
-</script>
+    function confidenceLabel(confidence) {
+      const labels = {
+        EXTRACTED: "直接提取",
+        INFERRED: "推断关联",
+        AMBIGUOUS: "存在歧义",
+        UNVERIFIED: "未核实"
+      };
+      return labels[confidence] || confidence;
+    }
 
-<!-- Libraries -->
-<script src="d3.min.js" defer></script>
-<script src="rough.min.js" defer></script>
-<script src="marked.min.js" defer></script>
-<script src="purify.min.js" defer></script>
+    function communityLabel(id) {
+      return (communities.find(item => item.id === id) || {}).label || "未分组";
+    }
 
-<!-- Sample graph data -->
-<!-- Main app -->
-<script src="graph-wash-helpers.js" defer></script>
-<script src="graph-wash.js" defer></script>
+    function buildCommunities() {
+      communityList.innerHTML = "";
+      communities.forEach(item => {
+        const button = document.createElement("button");
+        button.className = "nav-item";
+        button.type = "button";
+        button.dataset.community = item.id;
+        button.setAttribute("aria-pressed", item.id === activeCommunity ? "true" : "false");
+        button.innerHTML = `
+          <i class="swatch" style="background:${item.color}"></i>
+          <span class="nav-copy"><strong>${item.label}</strong><span>${item.meta}</span></span>
+          <span class="count">${item.count}</span>
+        `;
+        button.addEventListener("click", () => {
+          activeCommunity = item.id;
+          applyFilters();
+        });
+        communityList.appendChild(button);
+      });
+    }
 
+    function buildStarts() {
+      startList.innerHTML = "";
+      ["compile", "graph", "visible"].forEach(id => {
+        const node = nodeById.get(id);
+        const button = document.createElement("button");
+        button.className = "start-card";
+        button.type = "button";
+        button.innerHTML = `<span class="card-copy"><strong>${node.label}</strong><span>${communityLabel(node.community)} · ${confidenceLabel(node.confidence)}</span></span>`;
+        button.addEventListener("click", () => selectNode(id));
+        startList.appendChild(button);
+      });
+    }
+
+    function makePath(a, b) {
+      const x1 = a.x * 10;
+      const y1 = a.y * 6.8;
+      const x2 = b.x * 10;
+      const y2 = b.y * 6.8;
+      const mx = (x1 + x2) / 2;
+      const my = (y1 + y2) / 2;
+      const curve = Math.max(-70, Math.min(70, (a.y - b.y) * 1.7));
+      return `M ${x1} ${y1} Q ${mx + curve} ${my - 22} ${x2} ${y2}`;
+    }
+
+    function buildGraph() {
+      edgeLayer.innerHTML = "";
+      edges.forEach(([from, to, type], index) => {
+        const a = nodeById.get(from);
+        const b = nodeById.get(to);
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", makePath(a, b));
+        path.setAttribute("class", `edge ${type}`);
+        path.dataset.from = from;
+        path.dataset.to = to;
+        path.dataset.edgeId = `edge-${index}`;
+        edgeLayer.appendChild(path);
+      });
+
+      nodeLayer.innerHTML = "";
+      nodes.forEach(node => {
+        const button = document.createElement("button");
+        button.className = `node${node.unavailable ? " is-disabled" : ""}`;
+        button.type = "button";
+        button.dataset.id = node.id;
+        button.dataset.type = node.type;
+        button.dataset.community = node.community;
+        button.style.left = `${node.x}%`;
+        button.style.top = `${node.y}%`;
+        button.setAttribute("aria-pressed", node.id === selectedNodeId ? "true" : "false");
+        button.innerHTML = `
+          <span class="node-kind">${nodeKind(node)}</span>
+          <span class="node-name">${node.label}</span>
+          <span class="node-meta"><i class="spark"></i>${node.unavailable ? "来源暂不可用" : node.weight}</span>
+        `;
+        button.addEventListener("click", () => selectNode(node.id));
+        button.addEventListener("mouseenter", () => highlightNeighborhood(node.id));
+        button.addEventListener("mouseleave", () => applyFilters());
+        nodeLayer.appendChild(button);
+      });
+    }
+
+    function connectedIds(id) {
+      const ids = new Set([id]);
+      edges.forEach(([from, to]) => {
+        if (from === id) ids.add(to);
+        if (to === id) ids.add(from);
+      });
+      return ids;
+    }
+
+    function visibleNodes() {
+      const q = search.value.trim().toLowerCase();
+      return nodes.filter(node => {
+        const communityOk = activeCommunity === "all" || node.community === activeCommunity;
+        const focusOk =
+          focusMode === "all" ||
+          (focusMode === "core" && node.weight >= 68) ||
+          (focusMode === "source" && node.type === "source");
+        const searchOk = !q || `${node.label} ${node.source} ${node.summary}`.toLowerCase().includes(q);
+        return communityOk && focusOk && searchOk;
+      });
+    }
+
+    function applyFilters() {
+      buildCommunities();
+      const visible = visibleNodes();
+      const visibleIds = new Set(visible.map(node => node.id));
+      const hasNoResults = visible.length === 0 && atlas.dataset.mode === "normal";
+
+      document.querySelectorAll(".node").forEach(el => {
+        const isVisible = visibleIds.has(el.dataset.id);
+        el.classList.toggle("is-hidden", !isVisible);
+        const shouldDim = dimUnselected && selectedNodeId && el.dataset.id !== selectedNodeId && !connectedIds(selectedNodeId).has(el.dataset.id);
+        el.classList.toggle("is-dim", isVisible && shouldDim);
+        el.setAttribute("aria-pressed", el.dataset.id === selectedNodeId ? "true" : "false");
+      });
+
+      document.querySelectorAll(".edge").forEach(edge => {
+        const edgeVisible = visibleIds.has(edge.dataset.from) && visibleIds.has(edge.dataset.to);
+        edge.classList.toggle("is-dim", !edgeVisible || (dimUnselected && selectedNodeId && ![edge.dataset.from, edge.dataset.to].includes(selectedNodeId)));
+      });
+
+      noResults.classList.toggle("is-visible", hasNoResults);
+      const communityName = activeCommunity === "all" ? "全局视图" : communityLabel(activeCommunity);
+      canvasTitle.textContent = `知识地图 · ${communityName}`;
+      canvasSubtitle.textContent = hasNoResults ? "当前筛选没有匹配节点" : `${visible.length} 个节点在当前范围内可见`;
+      insightTitle.textContent = hasNoResults ? "没有匹配结果" : "来源节点连接度偏高";
+      insightCopy.textContent = hasNoResults ? "可以清除搜索词或切回全图查看完整关系。" : "建议从“知识编译”进入，可同时看到方法论、缓存与图谱生成的关系。";
+    }
+
+    function highlightNeighborhood(id) {
+      if (atlas.dataset.mode !== "normal") return;
+      const ids = connectedIds(id);
+      document.querySelectorAll(".node").forEach(el => {
+        el.classList.toggle("is-dim", !ids.has(el.dataset.id));
+      });
+      document.querySelectorAll(".edge").forEach(edge => {
+        edge.classList.toggle("is-dim", edge.dataset.from !== id && edge.dataset.to !== id);
+      });
+    }
+
+    function renderKnowledgeContent(node, neighbors) {
+      const content = document.getElementById("drawer-content");
+      const paragraphs = [
+        `${node.label}属于「${communityLabel(node.community)}」脉络。${node.summary}`,
+        neighbors.length
+          ? `它当前连接到 ${neighbors.map(item => `「${item.label}」`).join("、")}。这些关系说明它在图谱中既是阅读入口，也是后续追踪来源和主题的线索。`
+          : "这个节点暂时没有相邻节点，适合作为独立资料页继续补充来源和批注。",
+        node.type === "source"
+          ? "作为来源节点，它更适合承载出处、摘录和可靠性判断；相关主题会在图谱中向外展开。"
+          : "作为主题或实体节点，它更适合承载概念解释、关联判断和学习笔记；来源证据会在相邻节点中展开。"
+      ];
+
+      content.innerHTML = "";
+      paragraphs.forEach(text => {
+        const p = document.createElement("p");
+        p.textContent = text;
+        content.appendChild(p);
+      });
+    }
+
+    function selectNode(id) {
+      selectedNodeId = id;
+      const node = nodeById.get(id);
+      const neighbors = [...connectedIds(id)].filter(item => item !== id).map(item => nodeById.get(item));
+
+      document.getElementById("drawer-kind").innerHTML = `<span class="spark"></span>${nodeKind(node)} · ${node.unavailable ? "UNAVAILABLE" : "SELECTED"}`;
+      document.getElementById("drawer-title").textContent = node.label;
+      document.getElementById("drawer-subtitle").textContent = `${communityLabel(node.community)} · ${confidenceLabel(node.confidence)} · ${node.source}`;
+      document.getElementById("drawer-neighbor-count").textContent = `${neighbors.length} 个`;
+      document.getElementById("drawer-summary").textContent = node.summary;
+      renderKnowledgeContent(node, neighbors);
+
+      const list = document.getElementById("neighbor-list");
+      list.innerHTML = "";
+      neighbors.forEach(neighbor => {
+        const button = document.createElement("button");
+        button.className = "neighbor-card";
+        button.type = "button";
+        button.innerHTML = `<span class="card-copy"><strong>${neighbor.label}</strong><span>${nodeKind(neighbor)} · ${communityLabel(neighbor.community)}</span></span>`;
+        button.addEventListener("click", () => selectNode(neighbor.id));
+        list.appendChild(button);
+      });
+
+      applyFilters();
+    }
+
+    document.querySelectorAll("[data-focus]").forEach(button => {
+      button.addEventListener("click", () => {
+        focusMode = button.dataset.focus;
+        document.querySelectorAll("[data-focus]").forEach(item => item.setAttribute("aria-pressed", item === button ? "true" : "false"));
+        applyFilters();
+      });
+    });
+
+    document.querySelectorAll("[data-mode]").forEach(button => {
+      button.addEventListener("click", () => {
+        const mode = button.dataset.mode;
+        atlas.dataset.mode = mode;
+        document.querySelectorAll("[data-mode]").forEach(item => item.setAttribute("aria-pressed", item === button ? "true" : "false"));
+        applyFilters();
+      });
+    });
+
+    document.getElementById("toggle-dim").addEventListener("click", () => {
+      dimUnselected = !dimUnselected;
+      document.getElementById("toggle-dim").textContent = dimUnselected ? "显示全部层级" : "弱化未选中";
+      applyFilters();
+    });
+
+    document.getElementById("fit-view").addEventListener("click", () => {
+      activeCommunity = "all";
+      focusMode = "all";
+      search.value = "";
+      document.querySelectorAll("[data-focus]").forEach(item => item.setAttribute("aria-pressed", item.dataset.focus === "all" ? "true" : "false"));
+      applyFilters();
+      selectNode("compile");
+    });
+
+    search.addEventListener("input", applyFilters);
+
+    buildCommunities();
+    buildStarts();
+    buildGraph();
+    selectNode(selectedNodeId);
+  </script>
 </body>
 </html>

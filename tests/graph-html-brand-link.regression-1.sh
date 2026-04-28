@@ -1,5 +1,5 @@
 #!/bin/bash
-# Regression: brand mark should link to project repo and stay keyboard-visible
+# Regression: GitHub entry should link to project repo and stay keyboard-visible
 
 set -euo pipefail
 
@@ -32,35 +32,37 @@ build_graph_html_fixture() {
         || fail "build-graph-html.sh should succeed on basic fixture"
 }
 
-test_graph_html_has_brand_repo_link() {
+test_graph_html_has_github_repo_link() {
     local tmp_dir html
     tmp_dir="$(mktemp -d)"
 
     build_graph_html_fixture "$tmp_dir"
     html="$tmp_dir/wiki/knowledge-graph.html"
 
-    assert_file_contains "$html" '<a class="brand__mark" href="https://github.com/sdyckjq-lab/llm-wiki-skill"'
+    assert_file_contains "$html" '<a class="ghost-button github-button brand__github" href="https://github.com/sdyckjq-lab/llm-wiki-skill"'
     assert_file_contains "$html" 'target="_blank" rel="noopener"'
+    assert_file_contains "$html" '<span>GitHub</span>'
 
     rm -rf "$tmp_dir"
 }
 
-test_graph_html_has_brand_focus_visible_style() {
+test_graph_html_has_focus_visible_style() {
     local tmp_dir html
     tmp_dir="$(mktemp -d)"
 
     build_graph_html_fixture "$tmp_dir"
     html="$tmp_dir/wiki/knowledge-graph.html"
 
-    assert_file_contains "$html" '.brand__mark:focus-visible {'
+    assert_file_contains "$html" 'button:focus-visible,'
+    assert_file_contains "$html" 'input:focus-visible,'
     assert_file_contains "$html" '@media (prefers-reduced-motion: reduce) {'
 
     rm -rf "$tmp_dir"
 }
 
 main() {
-    test_graph_html_has_brand_repo_link
-    test_graph_html_has_brand_focus_visible_style
+    test_graph_html_has_github_repo_link
+    test_graph_html_has_focus_visible_style
     echo "PASS: graph HTML brand link regression coverage"
 }
 

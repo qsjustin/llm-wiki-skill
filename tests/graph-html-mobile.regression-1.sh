@@ -1,5 +1,5 @@
 #!/bin/bash
-# Regression: wash graph HTML must have responsive layout and closable drawer
+# Regression: oriental atlas HTML must have responsive stacked layout
 
 set -euo pipefail
 
@@ -40,11 +40,17 @@ test_graph_html_has_responsive_css() {
     html="$tmp_dir/wiki/knowledge-graph.html"
 
     assert_file_contains "$html" "@media (max-width: 900px)"
+    assert_file_contains "$html" "body {"
+    assert_file_contains "$html" "overflow: auto;"
+    assert_file_contains "$html" "grid-template-columns: 1fr;"
+    assert_file_contains "$html" "mobile-atlas-preview"
+    assert_file_contains "$html" "button.chip {"
+    assert_file_contains "$html" "min-height: 44px;"
 
     rm -rf "$tmp_dir"
 }
 
-test_graph_html_has_closable_drawer() {
+test_graph_html_has_stacked_persistent_drawer() {
     local tmp_dir html
     tmp_dir="$(mktemp -d)"
 
@@ -52,15 +58,16 @@ test_graph_html_has_closable_drawer() {
     html="$tmp_dir/wiki/knowledge-graph.html"
 
     assert_file_contains "$html" ".drawer {"
-    assert_file_contains "$html" "drawer-close"
-    assert_file_contains "$tmp_dir/wiki/graph-wash.js" "closeDrawer"
+    assert_file_contains "$html" "min-height: 560px;"
+    assert_file_contains "$html" 'id="drawer"'
+    assert_file_contains "$tmp_dir/wiki/graph-wash.js" "renderDrawer"
 
     rm -rf "$tmp_dir"
 }
 
 main() {
     test_graph_html_has_responsive_css
-    test_graph_html_has_closable_drawer
+    test_graph_html_has_stacked_persistent_drawer
     echo "PASS: graph HTML mobile regression coverage"
 }
 
