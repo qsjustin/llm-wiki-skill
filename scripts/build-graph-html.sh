@@ -19,6 +19,12 @@
 
 set -eu
 
+SCRIPT_DIR="${BASH_SOURCE[0]%/*}"
+[ "$SCRIPT_DIR" = "${BASH_SOURCE[0]}" ] && SCRIPT_DIR="."
+SCRIPT_DIR="$(cd "$SCRIPT_DIR" && pwd)"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/shared-config.sh"
+
 print_usage() {
   cat <<'EOF'
 用法：
@@ -71,11 +77,12 @@ done
 WIKI_ROOT="$1"
 
 command -v jq >/dev/null 2>&1 || {
-  echo "ERROR: jq 未安装。运行 brew install jq" >&2
+  echo "ERROR: jq is not installed. Install it via:" >&2
+  print_install_hint jq
   exit 1
 }
 
-SKILL_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+SKILL_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 TEMPLATES_DIR="$SKILL_DIR/templates"
 DEPS_DIR="$SKILL_DIR/deps"
 DATA="$WIKI_ROOT/wiki/graph-data.json"
